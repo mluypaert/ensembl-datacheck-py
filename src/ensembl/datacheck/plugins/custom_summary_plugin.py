@@ -13,40 +13,49 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import sys
+from typing import List, Optional, IO
+
+if sys.version_info >= (3, 11):
+    from typing import Self
+else:
+    from typing_extensions import Self
+
 import pytest
 import warnings
+
 
 class CustomSummaryPlugin:
     """
     A pytest plugin to provide custom summaries for test results, including warnings, failures, and passed tests.
 
     Attributes:
-        warnings (list): A list to store warning messages.
-        failures (list): A list to store formatted failure messages.
-        passed_tests (list): A list to store passed test identifiers.
+        warnings (List[warnings.WarningMessage]): A list to store warning messages.
+        failures (List[str]): A list to store formatted failure messages.
+        passed_tests (List[str]): A list to store passed test identifiers.
         no_warnings (bool): Flag to determine whether warnings should be displayed.
         passed (int): Count of passed tests.
         skipped (int): Count of skipped tests.
         config (pytest.Config): Pytest configuration object.
     """
 
-    def __init__(self, config):
+    def __init__(self: Self, config: pytest.Config) -> None:
         """
         Initializes the CustomSummaryPlugin with the given configuration.
 
         Args:
-            config (pytest.Config): Pytest configuration object.
+            config: Pytest configuration object.
         """
-        self.warnings = []
-        self.failures = []
-        self.passed_tests = []
-        self.no_warnings = config.getoption("--no-warnings")
-        self.passed = 0
-        self.skipped = 0
-        self.config = config
+        self.warnings: List[warnings.WarningMessage] = []
+        self.failures: List[str] = []
+        self.passed_tests: List[str] = []
+        self.no_warnings: bool = config.getoption("--no-warnings")
+        self.passed: int = 0
+        self.skipped: int = 0
+        self.config: pytest.Config = config
 
     @pytest.hookimpl(hookwrapper=True)
-    def pytest_runtest_protocol(self, item, nextitem):
+    def pytest_runtest_protocol(self, item: pytest.Item, nextitem: pytest.Item) -> None:
         """
         Hook to catch warnings during the test run.
 
@@ -56,25 +65,25 @@ class CustomSummaryPlugin:
         """
         with warnings.catch_warnings(record=True) as w:
             warnings.simplefilter("always")
-            outcome = yield
             self.warnings.extend(w)
-    def pytest_runtest_logreport(self, report):
+
+    def pytest_runtest_logreport(self: Self, report: pytest.TestReport) -> None:
         """
         Hook to log the results of each test.
 
         Args:
-            report (pytest.TestReport): The test report object.
+            report: The test report object.
         """
         if report.passed and report.when == "call":
             self.passed += 1
             self.passed_tests.append(report.nodeid)
         elif report.failed and report.when == "call":
-            formatted_error = self._format_assertion_error(report)
+            formatted_error: str = self._format_assertion_error(report)
             self.failures.append(formatted_error)
         elif report.skipped:
             self.skipped += 1
 
-    def _format_assertion_error(self, report):
+    def _format_assertion_error(self: Self, report: pytest.TestReport) -> str:
         """
         Formats assertion error messages for better readability.
 
@@ -90,7 +99,7 @@ class CustomSummaryPlugin:
         else:
             longreprtext = str(report.longrepr)
 
-        assertion_message = None
+        assertion_message: Optional[str] = None
         for line in longreprtext.splitlines():
             if "AssertionError" in line:
                 line = line.split("AssertionError: ")[1]
@@ -102,7 +111,7 @@ class CustomSummaryPlugin:
 
         return f"FAILED::{test_name}::{assertion_message}"
 
-    def pytest_terminal_summary(self, terminalreporter):
+    def pytest_terminal_summary(self: Self, terminalreporter: pytest.TerminalReporter, exitstatus: pytest.ExitCode, config: pytest.Config) -> None:
         """
         Hook to print custom summaries in the terminal after the test run.
 
@@ -121,7 +130,7 @@ class CustomSummaryPlugin:
                 report.nodeid = test_name
                 report.longrepr = ''
 
-    def _print_warnings_summary(self, terminalreporter):
+    def _print_warnings_summary(self: Self, terminalreporter: pytest.TerminalReporter) -> None:
         """
         Prints a summary of warnings in the terminal.
 
@@ -140,7 +149,7 @@ class CustomSummaryPlugin:
             else:
                 terminalreporter.write_sep("=", f"{dark_yellow}There is {total_warnings} warning{reset}")
 
-    def _print_failures_summary(self, terminalreporter):
+    def _print_failures_summary(self: Self, terminalreporter: pytest.TerminalReporter) -> None:
         """
         Prints a summary of failures in the terminal.
 
@@ -159,7 +168,7 @@ class CustomSummaryPlugin:
             else:
                 terminalreporter.write_sep("=", f"{dark_red}There is {total_failures} failure{reset}")
 
-    def _print_passed_summary(self, terminalreporter):
+    def _print_passed_summary(self: Self, terminalreporter: pytest.TerminalReporter) -> None:
         """
         Prints a summary of passed tests in the terminal.
 
@@ -179,7 +188,7 @@ class CustomSummaryPlugin:
             else:
                 terminalreporter.write_sep("=", f"{dark_green}There is {total_passed} passed test{reset}")
 
-    def _format_passed_test(self, passed_test):
+    def _format_passed_test(self: Self, passed_test: str) -> str:
         """
         Formats passed test identifiers for better readability.
 
@@ -194,7 +203,7 @@ class CustomSummaryPlugin:
         module_path = parts[0].split("/")[-1].replace(".py", "")
         return f"Pass::{module_path}::{test_name}"
 
-    def write_summary_to_file(self, target_path):
+    def write_summary_to_file(self: Self, target_path: str) -> None:
         """
         Writes the test summary to a file.
 
@@ -207,12 +216,12 @@ class CustomSummaryPlugin:
             self._write_failures_summary(f)
             self._write_passed_summary(f)
 
-    def _write_warnings_summary(self, file):
+    def _write_warnings_summary(self: Self, file: IO[str]) -> None:
         """
         Writes the warnings summary to a file.
 
         Args:
-            file (file object): File object where the summary should be written.
+            file: File object where the summary should be written.
         """
         if self.warnings:
             file.write("Warnings summary\n")
@@ -224,12 +233,12 @@ class CustomSummaryPlugin:
             else:
                 file.write(f"There is {total_warnings} warning\n")
 
-    def _write_failures_summary(self, file):
+    def _write_failures_summary(self: Self, file: IO[str]) -> None:
         """
         Writes the failures summary to a file.
 
         Args:
-            file (file object): File object where the summary should be written.
+            file: File object where the summary should be written.
         """
 
         if self.failures:
@@ -242,12 +251,12 @@ class CustomSummaryPlugin:
             else:
                 file.write(f"There is {total_failures} failure\n")
 
-    def _write_passed_summary(self, file):
+    def _write_passed_summary(self: Self, file: IO[str]) -> None:
         """
         Writes the passed tests summary to a file.
 
         Args:
-            file (file object): File object where the summary should be written.
+            file: File object where the summary should be written.
         """
         if self.passed_tests:
             file.write("Passed summary\n")

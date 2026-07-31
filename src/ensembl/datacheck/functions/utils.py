@@ -28,7 +28,7 @@ class EnsemblDatacheckWarning(UserWarning):
         function_name (str): The name of the function where the warning originated.
     """
 
-    def __init__(self, message, file_name, function_name):
+    def __init__(self, message, file_name, function_name) -> None:
         """
         Initializes the EnsemblDatacheckWarning with the given message, file name, and function name.
 

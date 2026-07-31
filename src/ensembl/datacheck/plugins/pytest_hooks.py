@@ -14,12 +14,12 @@
 # limitations under the License.
 
 import pathlib
-from collections import defaultdict
 import pytest
 import os
 import warnings
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
+from typing import Any, Generator, Optional
 from ensembl.datacheck.functions.utils import EnsemblDatacheckWarning
 from .custom_summary_plugin import CustomSummaryPlugin
 from .cache_manager import CacheManager
@@ -30,21 +30,21 @@ import json
 PARSED_PARAMS_STASH_KEY = pytest.StashKey[dict[str, str]]()
 
 
-def _parse_params(raw_params):
+def _parse_params(raw_params: Optional[list[str]]) -> dict[str, str]:
     """
     Parse key-value command-line parameters into a dictionary.
 
     Args:
-        raw_params (list[str] or None): Parameters provided through --params.
+        raw_params: Parameters provided through --params.
             Each value may contain a comma-separated key=value list.
 
     Returns:
-        dict: Parsed parameter dictionary where keys and values are strings.
+        Parsed parameter dictionary with keys and values as strings.
 
     Raises:
         pytest.UsageError: If any parameter is not in key=value format.
     """
-    parsed_params = {}
+    parsed_params: dict[str, str] = {}
     if not raw_params:
         return parsed_params
 
@@ -74,12 +74,12 @@ def _parse_params(raw_params):
     return parsed_params
 
 
-def pytest_addoption(parser):
+def pytest_addoption(parser: pytest.Parser) -> None:
     """
     Adds command-line options to pytest.
 
     Args:
-        parser (pytest.Parser): The pytest parser object.
+        parser: The pytest parser object.
     """
     parser.addoption("--target-file", "--file", dest="target_file", default=None, help="Path to the target file to be tested")
     parser.addoption("--source-file", dest="source_file", default=None, help="Optional path to a source file for comparison checks")
@@ -106,7 +106,7 @@ def pytest_addoption(parser):
                                                  " eg. production db or metadata db for taxonomy database")
 
 
-def pytest_runtest_setup(item):
+def pytest_runtest_setup(item: pytest.Item) -> None:
     """
     Pytest hook checks if the test item has any markers named "automation_resource". If such markers are present
     and the --automation_resource option is provided, it verifies that the value of the option matches
@@ -123,42 +123,47 @@ def pytest_runtest_setup(item):
 
 
 @pytest.fixture
-def target_file(request):
+def target_file(request: pytest.FixtureRequest) -> pathlib.Path | None:
     """
     Pytest fixture to get the target file path from the command-line options.
 
     Args:
-        request (pytest.FixtureRequest): The fixture request object.
+        request: The fixture request object.
 
     Returns:
         pathlib.Path or None: The target file path, or None if not provided.
     """
-    target_file = request.config.getoption("target_file")
-    if target_file:
-        target_file = pathlib.Path(target_file).expanduser()
-    return target_file
+    target_file_path: str = request.config.getoption("target_file")
+    if target_file_path:
+        target_file = pathlib.Path(target_file_path).expanduser()
+        return target_file
+    else:
+        return None
 
 
 @pytest.fixture
-def source_file(request):
+def source_file(request: pytest.FixtureRequest) -> pathlib.Path | None:
     """
     Pytest fixture to get the source file path from the command-line options.
 
     Args:
-        request (pytest.FixtureRequest): The fixture request object.
+        request: The fixture request object.
 
     Returns:
-        pathlib.Path or None: The source file path, or None if not provided.
+        The source file path, or None if not provided.
     """
-    source_file = request.config.getoption("source_file")
-    if source_file:
-        source_file = pathlib.Path(source_file).expanduser()
-    return source_file
+    source_file_path: str = request.config.getoption("source_file")
+    if source_file_path:
+        source_file = pathlib.Path(source_file_path).expanduser()
+        return source_file
+    else:
+        return None
+
 
 # db session factory
-def _create_session_fixture(option_name):
+def _create_session_fixture(option_name: str) -> pytest.fixture:
     @pytest.fixture(scope="session")
-    def _fixture(request):
+    def _fixture(request: pytest.FixtureRequest) -> Optional[pytest.Session]:
         database_url = request.config.getoption(option_name)
 
         if database_url:
@@ -178,8 +183,7 @@ db_session = _create_session_fixture("database")
 other_db_session = _create_session_fixture("other_database")
 
 
-
-def pytest_cmdline_main(config):
+def pytest_cmdline_main(config: pytest.Config) -> None:
     """
     Ensures only the specified test file or directory is run.
 
@@ -219,7 +223,7 @@ def pytest_cmdline_main(config):
     )
 
 
-def pytest_configure(config):
+def pytest_configure(config: pytest.Config) -> None:
     """
     Configures pytest with custom warning formats and caching logic.
 
@@ -227,23 +231,27 @@ def pytest_configure(config):
         config (pytest.Config): The pytest configuration object.
     """
 
-    def custom_warning_format(message, category, filename, lineno, file=None, line=None):
+    def custom_warning_format(
+            message: Warning | str, category: type[Warning],
+            filename: str, lineno: int, line: str | None = None
+            ) -> str:
         """
         Custom warning format for EnsemblDatacheckWarning.
 
         Args:
-            message (str): Warning message.
-            category (Warning): Warning category.
-            filename (str): Name of the file issuing the warning.
-            lineno (int): Line number of the warning.
+            message: Warning message.
+            category: Warning category.
+            filename: Name of the file issuing the warning.
+            lineno: Line number of the warning.
 
         Returns:
             str: Formatted warning message.
         """
-        if issubclass(category, EnsemblDatacheckWarning):
-            return str(message) + '\n'
+        msg_str = str(message)
+        if issubclass(type(category), EnsemblDatacheckWarning):
+            return msg_str + '\n'
         else:
-            return f"{filename}:{lineno}: {category.__name__}: {message}\n"
+            return f"{filename}:{lineno}: {type(category).__name__}: {msg_str}\n"
 
     # Apply custom warning format
     warnings.formatwarning = custom_warning_format
@@ -277,12 +285,12 @@ def pytest_configure(config):
 
 
 @pytest.hookimpl(tryfirst=True)
-def pytest_report_header(config):
+def pytest_report_header(config: pytest.Config) -> list[str]:
     """
     Adds a custom header to the pytest report.
 
     Args:
-        config (pytest.Config): The pytest configuration object.
+        config: The pytest configuration object.
 
     Returns:
         list: List of header strings.
@@ -291,16 +299,15 @@ def pytest_report_header(config):
 
 
 @pytest.hookimpl(hookwrapper=True, tryfirst=True)
-def pytest_terminal_summary(terminalreporter, exitstatus, config):
+def pytest_terminal_summary(terminalreporter: pytest.TerminalReporter, exitstatus: pytest.ExitCode, config: pytest.Config) -> None:
     """
     Custom summary for the pytest terminal output.
 
     Args:
-        terminalreporter (pytest.TerminalReporter): The pytest terminal reporter plugin.
-        exitstatus (int): Exit status of the pytest run.
-        config (pytest.Config): The pytest configuration object.
+        terminalreporter: The pytest terminal reporter plugin.
+        exitstatus: Exit status of the pytest run.
+        config: The pytest configuration object.
     """
-    yield
     if config.getoption("--collect-only"):
         return
 
@@ -312,12 +319,12 @@ def pytest_terminal_summary(terminalreporter, exitstatus, config):
 
 
 @pytest.hookimpl(tryfirst=True)
-def pytest_sessionstart(session):
+def pytest_sessionstart(session: pytest.Session) -> None:
     """
     Actions to perform at the start of the pytest session.
 
     Args:
-        session (pytest.Session): The pytest session object.
+        session: The pytest session object.
     """
     print("Ensembl Datacheck")
     print("https://github.com/Ensembl/ensembl-datacheck-py")
@@ -326,7 +333,7 @@ def pytest_sessionstart(session):
 
 
 # # ### JSON Report Setup on param --json-report  enabled #####
-def pytest_collection_modifyitems(items, config):
+def pytest_collection_modifyitems(items: pytest.Item, config: pytest.Config) -> None:
     for item in items:
         callspec = getattr(item, "callspec", None)
 
@@ -348,12 +355,12 @@ def pytest_collection_modifyitems(items, config):
             item.genome_uuid = genome["genome_uuid"]
 
 
-def pytest_json_runtest_metadata(item, call):
+def pytest_json_runtest_metadata(item: pytest.Item, call: pytest.CallInfo) -> dict[str, Any]:
     """
     Adds custom metadata to the JSON report for each test item.
     Args:
-        item (pytest.Item): The test item being executed.
-        call (pytest.CallInfo): Information about the test call, including the phase (setup, call, teardown).
+        item: The test item being executed.
+        call: Information about the test call, including the phase (setup, call, teardown).
     Returns:
         dict: A dictionary of metadata to be included in the JSON report for the test item.
     """
@@ -371,7 +378,7 @@ def pytest_json_runtest_metadata(item, call):
     return {'start': call.start, "tag": datacheck_tag, 'stop': call.stop}
 
 
-def pytest_json_modifyreport(json_report):
+def pytest_json_modifyreport(json_report: dict[str, Any]) -> None:
     """
     Modifies the JSON report to group test results by genome UUID and include error information.
     Args:
@@ -382,13 +389,13 @@ def pytest_json_modifyreport(json_report):
 
     """
     tests = json_report["tests"]
-    genomes = defaultdict(lambda: {
+    genomes: dict[str, Any] = defaultdict(lambda: {
     })
-    tag = f"default_tag_{datetime.now().strftime('%Y%m%d_%H%M%S')}"
+    tag: str = f"default_tag_{datetime.now().strftime('%Y%m%d_%H%M%S')}"
 
     # group tests per genome if not set under All
     for test in tests:
-        meta = test.get("metadata", {})
+        meta: dict[str, Any] = test.get("metadata", {})
         genome_uuid = meta.get("genome_uuid")
         tag = meta.get("tag", tag)
         if not genome_uuid:
@@ -408,7 +415,7 @@ def pytest_json_modifyreport(json_report):
     json_report["tag"] = tag
 
 
-def pytest_sessionfinish(session, exitstatus):
+def pytest_sessionfinish(session: pytest.Session, exitstatus: pytest.ExitCode) -> None:
     if session.config.getoption("--collect-only"):
         with open("selected_tests.txt", "w") as f1, open("selected_test_details.txt", "w") as f2:
             for test in session.config.selected_tests:

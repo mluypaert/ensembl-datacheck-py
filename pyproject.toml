@@ -30,6 +30,7 @@ classifiers = [
     "License :: OSI Approved :: Apache Software License",
 ]
 dependencies = [
+    "mypy~=1.20.0",
     "pytest>=8.2.2",
     "xxhash",
     "ensembl-metadata-api @ git+https://github.com/Ensembl/ensembl-metadata-api.git",

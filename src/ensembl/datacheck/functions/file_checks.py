@@ -15,12 +15,13 @@
 
 import os
 
-def file_exists(target_file):
+
+def file_exists(target_file: str) -> bool:
     """
     Check if the file exists at the given path.
 
     Args:
-        target_file (str): The path to the file.
+        target_file: The path to the file.
 
     Returns:
         bool: True if the file exists, False otherwise.
@@ -29,26 +30,28 @@ def file_exists(target_file):
         return False
     return os.path.exists(target_file)
 
-def file_size(target_file):
+
+def file_size(target_file: str) -> int | None:
     """
     Get the size of the file at the given path.
 
     Args:
-        target_file (str): The path to the file.
+        target_file: The path to the file.
 
     Returns:
-        int or None: The size of the file in bytes, or None if the file does not exist.
+        The size of the file in bytes (as int), or None if the file does not exist.
     """
     if not target_file or not os.path.exists(target_file):
         return None
     return os.path.getsize(target_file)
 
-def is_text_file(target_file):
+
+def is_text_file(target_file: str) -> bool:
     """
     Check if the file at the given path is a text file.
 
     Args:
-        target_file (str): The path to the file.
+        target_file: The path to the file.
 
     Returns:
         bool: True if the file is a text file, False otherwise.

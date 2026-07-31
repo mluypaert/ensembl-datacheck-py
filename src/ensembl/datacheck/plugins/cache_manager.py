@@ -16,6 +16,13 @@
 import pathlib
 import pytest
 import pickle
+import sys
+
+if sys.version_info >= (3, 11):
+    from typing import Self
+else:
+    from typing_extensions import Self
+
 import xxhash
 from sqlalchemy import create_engine, text
 from datetime import datetime
@@ -34,20 +41,20 @@ class CacheManager:
         cache_dir (pathlib.Path): Directory path where the cache is stored.
     """
 
-    def __init__(self, config):
+    def __init__(self: Self, config: pytest.Config) -> None:
         """
         Initializes CacheManager with the given configuration.
 
         Args:
             config (pytest.Config): Pytest configuration object.
         """
-        self.config = config
-        self.target_file = config.getoption("target_file")
-        self.test_name = config.getoption("--test")
-        self.database_url = config.getoption("--database")
-        self.cache_dir = self.get_cache_dir()
+        self.config: pytest.Config = config
+        self.target_file: str = config.getoption("target_file")
+        self.test_name: str = config.getoption("--test")
+        self.database_url: str = config.getoption("--database")
+        self.cache_dir: pathlib.Path = self.get_cache_dir()
 
-    def get_cache_dir(self):
+    def get_cache_dir(self) -> pathlib.Path:
         """
         Determines the cache directory based on the input file or database URL.
 
@@ -83,7 +90,7 @@ class CacheManager:
             raise ValueError("Either --target-file/--file or --database must be provided.")
         return cache_dir
 
-    def get_results_file(self):
+    def get_results_file(self) -> pathlib.Path:
         """
         Determines the path to the results file based on the input file or database URL.
 
@@ -97,7 +104,7 @@ class CacheManager:
             results_file = self.cache_dir / "results.txt"
         return results_file
 
-    def setup_cache(self):
+    def setup_cache(self) -> None:
         """
         Sets up the cache directory and loads previous test results if available.
 
@@ -123,7 +130,7 @@ class CacheManager:
             self.cache_dir.mkdir(parents=True)
             print(f"Created cache directory at: {self.cache_dir}")
 
-    def load_test_results(self):
+    def load_test_results(self) -> None:
         """
         Loads previous test results from the results file if available.
 
@@ -140,7 +147,7 @@ class CacheManager:
         else:
             raise FileNotFoundError(f"No previous test results found for {self.target_file or self.database_url}")
 
-    def handle_cache_post_run(self, terminalreporter):
+    def handle_cache_post_run(self, terminalreporter: pytest.TerminalReporter) -> None:
         """
         Handles cache operations after the pytest run.
 
@@ -154,7 +161,7 @@ class CacheManager:
         self.save_cache(terminalreporter)
         self.cleanup_cache_if_all_passed(terminalreporter)
 
-    def write_summary_to_file(self, results_file):
+    def write_summary_to_file(self, results_file: pathlib.Path) -> None:
         """
         Writes the test summary to the results file using the custom summary plugin.
 
@@ -165,7 +172,7 @@ class CacheManager:
         if custom_summary_plugin:
             custom_summary_plugin.write_summary_to_file(results_file)
 
-    def save_cache(self, terminalreporter):
+    def save_cache(self, terminalreporter: pytest.TerminalReporter) -> None:
         """
         Saves the IDs of the failed tests to the cache file.
 
@@ -178,7 +185,7 @@ class CacheManager:
         with cache_file.open("wb") as f:
             pickle.dump(last_failed_ids, f)
 
-    def cleanup_cache_if_all_passed(self, terminalreporter):
+    def cleanup_cache_if_all_passed(self, terminalreporter: pytest.TerminalReporter) -> None:
         """
         Cleans up the cache if all tests passed by deleting the cache file.
 
