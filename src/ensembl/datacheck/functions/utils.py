@@ -17,6 +17,19 @@ from ensembl.production.metadata.api.factories.genomes import GenomeFactory
 from ensembl.production.metadata.api.models import Dataset, GenomeDataset, DatasetStatus, EnsemblRelease, ReleaseStatus, \
     Organism, Genome, OrganismGroup, OrganismGroupMember, Assembly, AssemblySequence, DatasetSource, GenomeRelease, \
     DatasetType
+import sys
+from typing import Any, Iterable, List, Optional
+
+if sys.version_info >= (3, 11):
+    from typing import Self
+else:
+    from typing_extensions import Self
+
+if sys.version_info >= (3, 12):
+    from typing import override
+else:
+    from typing_extensions import override
+
 
 class EnsemblDatacheckWarning(UserWarning):
     """
@@ -28,7 +41,7 @@ class EnsemblDatacheckWarning(UserWarning):
         function_name (str): The name of the function where the warning originated.
     """
 
-    def __init__(self, message, file_name, function_name) -> None:
+    def __init__(self: Self, message: str, file_name: str, function_name: str) -> None:
         """
         Initializes the EnsemblDatacheckWarning with the given message, file name, and function name.
 
@@ -37,11 +50,12 @@ class EnsemblDatacheckWarning(UserWarning):
             file_name (str): The name of the file where the warning originated.
             function_name (str): The name of the function where the warning originated.
         """
-        self.message = message
-        self.file_name = file_name
-        self.function_name = function_name
+        self.message: str = message
+        self.file_name: str = file_name
+        self.function_name: str = function_name
 
-    def __str__(self):
+    @override
+    def __str__(self: Self) -> str:
         """
         Returns a formatted string representation of the warning.
 
@@ -51,28 +65,30 @@ class EnsemblDatacheckWarning(UserWarning):
         return f"Warning::{self.file_name}::{self.function_name}: {self.message}"
 
 
-def get_genomes_from_metadata_db(db_url, release_name=None, genome_uuids:list=None):
+def get_genomes_from_metadata_db(
+    db_url: str, release_name: Optional[str] = None,
+    genome_uuids: Optional[List[str]] = None
+) -> Iterable[dict[str, Any]]:
     """
     Fetch genome UUIDs from database based on release_name or explicit UUID list.
 
     Args:
-        db_url (str): SQLAlchemy DB URL
-        release_name (list[str], optional): list of release names
-        genome_uuids (list[str], optional): explicit genome UUIDs
+        db_url: SQLAlchemy DB URL
+        release_name: comma-separated list of release names
+        genome_uuids: explicit genome UUIDs
 
     Returns:
-        pandas.DataFrame: dataframe with genome metadata including uuid
-
+        Iterable of dictionaries containing genome metadata including uuid
     """
-    release_name = release_name.split(',') if release_name else None
-    genomes_iter = GenomeFactory().get_genomes(
+    release_name_list: List[str] | None = release_name.split(',') if release_name else None
+    genomes_iter: Iterable[dict[str, Any]] = GenomeFactory().get_genomes(
                 metadata_db_uri=db_url,
                 genome_uuid=genome_uuids,
                 dataset_type="genebuild",
                 dataset_names=["genebuild"],
-                release_name=release_name,
-                batch_size=0, # Fetch all at once since we need to group them in memory
-                columns= [
+                release_name=release_name_list,
+                batch_size=0,  # Fetch all at once since we need to group them in memory
+                columns=[
                     GenomeRelease.release_id.label("release_id"),
                     EnsemblRelease.name.label("release_name"),
                     EnsemblRelease.version.label("release_version"),
