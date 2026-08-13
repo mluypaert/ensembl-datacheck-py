@@ -46,18 +46,19 @@ def file_size(target_file):
         return None
     return os.path.getsize(target_file)
 
-def is_text_file(target_file):
+
+def is_text_file(target_file: str | Path) -> bool:
     """
     Check if the file at the given path is a text file.
 
     Args:
-        target_file (str): The path to the file.
+        target_file: The path to the file.
 
     Returns:
         bool: True if the file is a text file, False otherwise.
     """
     try:
-        with open(target_file, 'r') as file:
+        with open(target_file, 'r', encoding='utf-8') as file:
             file.read()
         return True
     except Exception:

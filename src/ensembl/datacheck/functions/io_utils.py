@@ -13,6 +13,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from pathlib import Path
+
+from cyvcf2 import VCF
+
+
 def bb_bw_reader(target_file):
     """
     Provide a pyBigWig reader opened on a bigBed/bigWig file path.
@@ -29,7 +34,8 @@ def bb_bw_reader(target_file):
     import pyBigWig
     return pyBigWig.open(str(target_file))
 
-def vcf_reader(target_file):
+
+def vcf_reader(target_file: str | Path) -> VCF:
     """
     Provide a cyvcf2 VCF reader opened on a VCF file path.
 
@@ -42,5 +48,4 @@ def vcf_reader(target_file):
     Raises:
         Exception: Propagates import/open failures from cyvcf2.
     """
-    from cyvcf2 import VCF
     return VCF(str(target_file))
