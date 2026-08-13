@@ -13,7 +13,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from gzip import GzipFile
 import os
+from pathlib import Path
+
 
 def file_exists(target_file):
     """
@@ -56,6 +59,25 @@ def is_text_file(target_file):
     try:
         with open(target_file, 'r') as file:
             file.read()
+        return True
+    except Exception:
+        return False
+
+
+def is_gz_text_file(target_file: str | Path) -> bool:
+    """
+    Check if the file at the given path is a gzipped text file.
+
+    Args:
+        target_file: The path to the file.
+
+    Returns:
+        bool: True if the file is a text file, False otherwise.
+    """
+    try:
+        with open(target_file, 'rb') as file:
+            decompressed_file = GzipFile(fileobj=file)
+            decompressed_file.read()
         return True
     except Exception:
         return False
