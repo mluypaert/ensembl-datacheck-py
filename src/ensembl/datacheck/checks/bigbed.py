@@ -39,6 +39,7 @@ def check_exist(target_file):
     """
     assert file_exists(target_file), "The target file does not exist."
 
+
 def check_validity(target_file):
     """
     Check that the target file is recognised as BigBed.
@@ -54,7 +55,7 @@ def check_validity(target_file):
     try:
         reader = bb_bw_reader(target_file)
         assert reader is not None, "Could not open target file as BigBed."
-        assert reader.isBigBed(), "The target file is not recognised as BigBed."
+        assert reader.isBigBed(), "The target file is not recognised as BigBed."  # noqa: E501
     except Exception as exc:
         raise AssertionError(
             f"Could not validate target file as BigBed: {exc}"

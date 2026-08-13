@@ -32,6 +32,7 @@ def file_exists(target_file):
         return False
     return os.path.exists(target_file)
 
+
 def file_size(target_file):
     """
     Get the size of the file at the given path.
@@ -40,7 +41,8 @@ def file_size(target_file):
         target_file (str): The path to the file.
 
     Returns:
-        int or None: The size of the file in bytes, or None if the file does not exist.
+        int or None: The size of the file in bytes,
+                     or None if the file does not exist.
     """
     if not target_file or not os.path.exists(target_file):
         return None
