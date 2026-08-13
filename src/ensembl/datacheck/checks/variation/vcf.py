@@ -23,7 +23,7 @@ from pathlib import Path
 import pytest
 
 from ensembl.datacheck.checks.vcf import *  # noqa: W0401
-from ensembl.datacheck.functions.io_utils import vcf_reader
+from ensembl.datacheck.functions.vcf_utils import vcf_reader
 
 # module level marker to select test per filetype and dataset type
 pytestmark = [

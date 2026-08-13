@@ -31,7 +31,7 @@ from pathlib import Path
 from cyvcf2 import VCF
 
 from ensembl.datacheck.functions.file_checks import file_exists, is_gz_text_file
-from ensembl.datacheck.functions.io_utils import vcf_reader
+from ensembl.datacheck.functions.vcf_utils import vcf_reader
 
 
 def check_exist(target_file: Path):

@@ -34,11 +34,12 @@ import pytest
 
 from ensembl.datacheck.checks.bigwig import check_exist, check_validity
 from ensembl.datacheck.functions.file_checks import file_exists
-from ensembl.datacheck.functions.io_utils import bb_bw_reader, vcf_reader
+from ensembl.datacheck.functions.bb_bw_utils import bb_bw_reader
 from ensembl.datacheck.functions.utils import EnsemblDatacheckWarning
-from ensembl.datacheck.functions.vcf_sampling import (
+from ensembl.datacheck.functions.vcf_utils import (
     build_variant_list_from_source,
     get_vcf_variant_count,
+    vcf_reader
 )
 
 

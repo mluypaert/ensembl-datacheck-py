@@ -14,15 +14,33 @@
 # limitations under the License.
 
 """
-vcf_sampling.py
+vcf_utils.py
 
-Shared helpers for VCF record counting and random-region variant sampling.
+Shared helpers for VCF parsing, record counting and random-region variant sampling.
 """
 
+from pathlib import Path
 import random
 import shutil
 import subprocess
-from ensembl.datacheck.functions.io_utils import vcf_reader
+
+from cyvcf2 import VCF
+
+
+def vcf_reader(target_file: str | Path) -> VCF:
+    """
+    Provide a cyvcf2 VCF reader opened on a VCF file path.
+
+    Args:
+        target_file (str or pathlib.Path): The path to the VCF file.
+
+    Returns:
+        cyvcf2.cyvcf2.VCF: Open reader on success.
+
+    Raises:
+        Exception: Propagates import/open failures from cyvcf2.
+    """
+    return VCF(str(target_file))
 
 
 def get_vcf_variant_count(source_file):
