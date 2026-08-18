@@ -25,6 +25,39 @@ import shutil
 import subprocess
 
 from cyvcf2 import VCF
+from pysam import HTSFile
+
+
+def is_vcf_file(hts_file: HTSFile) -> bool:
+    """
+    Check if the given file object (opened as HTSFile) is a VCF file.
+
+    Args:
+        hts_file: HTSFile object received from pysam.VariantFile
+
+    Returns:
+        bool: True if the file is a VCF file, False otherwise.
+    """
+    if not hts_file.is_vcf:
+        return False
+
+    return True
+
+
+def is_bgzf_compressed_file(hts_file: HTSFile) -> bool:
+    """
+    Check if the given file object (opened as HTSFile) is a bgzipped file.
+
+    Args:
+        hts_file: HTSFile object received from pysam.VariantFile
+
+    Returns:
+        bool: True if the file is a bgzipped file, False otherwise.
+    """
+    if hts_file.compression != 'BGZF':
+        return False
+
+    return True
 
 
 def vcf_reader(target_file: str | Path) -> VCF:

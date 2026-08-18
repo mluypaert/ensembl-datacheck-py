@@ -25,13 +25,13 @@ Checks performed:
 4. check_format: Asserts that the target file is readable as vcf.
 """
 
-from glob import glob
 from pathlib import Path
 
 from cyvcf2 import VCF
+from pysam import HTSFile, TabixFile, VariantFile
 
 from ensembl.datacheck.functions.file_checks import file_exists, is_gz_text_file
-from ensembl.datacheck.functions.vcf_utils import vcf_reader
+from ensembl.datacheck.functions.vcf_utils import is_bgzf_compressed_file, is_vcf_file, vcf_reader
 
 
 def check_exist(target_file: Path):
@@ -60,20 +60,72 @@ def check_is_gz_txt_file(target_file: str | Path):
     assert is_gz_text_file(target_file), "The file is not identified as a gzipped text file."
 
 
-def check_has_index_file(target_file: str | Path):
+def check_is_bgzf_vcf_file(target_file: str | Path):
     """
-    Check that an accompanying index file can be found.
+    Check that the file is a bgzipped vcf file.
 
     Args:
         target_file: The path to the file.
 
     Raises:
-        AssertionError: If the file is not identified as a gzipped text file.
+        AssertionError: If the file is not identified as a bgzipped vcf file.
+    """
+    try:
+        file: HTSFile
+        with VariantFile(str(target_file), mode="r") as file:
+            # Assess compression
+            assert (
+                is_bgzf_compressed_file(file)
+            ), f"File is not identified as a bgzipped file: {target_file}"
+
+            # Assess format
+            assert (
+                is_vcf_file(file)
+            ), f"File is not identified as a vcf file: {target_file}"
+
+    except (OSError, ValueError, NotImplementedError) as ex:
+        raise AssertionError(
+            f"Exception caught during VariantFile assessment of {target_file}:"
+            + f" {ex}."
+        ) from ex
+
+
+def check_has_valid_index_file(target_file: str | Path):
+    """
+    Check that an accompanying index file can be found and read appropriately.
+
+    Args:
+        target_file: The path to the file.
+
+    Raises:
+        AssertionError: If the expected index file is not found or not readable
+            as a TabixFile index.
     """
 
-    index_suffix = '.t[bs]i'
-    index_path = str(target_file) + index_suffix
-    assert len(glob(index_path)) == 1, f"No or more than one index file found for target file {target_file}."
+    csi_path = str(target_file) + '.csi'
+    tbi_path = str(target_file) + '.tbi'
+
+    index_file: str
+    if file_exists(csi_path):
+        index_file = csi_path
+    elif file_exists(tbi_path):
+        index_file = tbi_path
+    else:
+        raise AssertionError(
+            f"Could not find index file for VCF file {target_file}."
+        )
+
+    try:
+        with TabixFile(filename=str(target_file), index=index_file, mode="r"):
+            pass
+    except (ValueError) as ex:
+        raise AssertionError(
+            f"Missing index file: {index_file}"
+        ) from ex
+    except IOError as ex:
+        raise AssertionError(
+            f"Failed to open index file: {index_file}"
+        ) from ex
 
 
 def check_format(target_file: str | Path):
