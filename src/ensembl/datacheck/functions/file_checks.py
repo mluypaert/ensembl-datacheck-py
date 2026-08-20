@@ -33,20 +33,20 @@ def file_exists(target_file: Path | str | None):
     return os.path.exists(target_file)
 
 
-def file_size(target_file):
+def file_size(file_path: str | Path):
     """
     Get the size of the file at the given path.
 
     Args:
-        target_file (str): The path to the file.
+        file_path: Path to the file to check.
 
     Returns:
         int or None: The size of the file in bytes,
                      or None if the file does not exist.
     """
-    if not target_file or not os.path.exists(target_file):
+    if not file_path or not os.path.exists(file_path):
         return None
-    return os.path.getsize(target_file)
+    return os.path.getsize(file_path)
 
 
 def is_text_file(target_file: str | Path) -> bool:

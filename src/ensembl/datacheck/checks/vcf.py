@@ -76,7 +76,7 @@ def check_is_bgzf_vcf_file(target_file: Path | None, source_file: Path | None):
             ) from ex
 
 
-def check_has_valid_index_file(target_file: str | Path, source_file: str | Path | None):
+def check_has_valid_index_file(target_file: Path, source_file: Path | None):
     """
     Check that an accompanying index file can be found and read appropriately.
 
@@ -118,7 +118,7 @@ def check_has_valid_index_file(target_file: str | Path, source_file: str | Path 
             ) from ex
 
 
-def check_header(target_file: str | Path, source_file: str | Path | None):
+def check_header(target_file: Path, source_file: Path | None):
     """
     Check that the VCF header has all fields required for bcftools processing.
 

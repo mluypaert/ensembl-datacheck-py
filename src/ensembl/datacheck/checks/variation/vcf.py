@@ -39,7 +39,7 @@ pytestmark = [
 
 
 # Header checks
-def check_csq_in_header(target_file: str | Path):
+def check_csq_in_header(target_file: Path):
     """
     Check that the VCF INFO header contains the CSQ field.
 
@@ -55,7 +55,7 @@ def check_csq_in_header(target_file: str | Path):
     assert reader.get_header_type('CSQ'), "CSQ field not found in the VCF (INFO) header."
 
 
-def check_source_in_header(target_file: str | Path):
+def check_source_in_header(target_file: Path):
     """
     Check that the VCF header contains the source field.
 
@@ -72,7 +72,7 @@ def check_source_in_header(target_file: str | Path):
 
 
 # Source comparison checks
-def check_variant_count_source_comparison(target_file, source_file):
+def check_variant_count_source_comparison(target_file: Path, source_file: Path | None):
     """
     Compare target VCF variant count with source VCF variant count.
 
@@ -81,8 +81,8 @@ def check_variant_count_source_comparison(target_file, source_file):
     - target_count / source_count > min_count_ratio (default 0.95)
 
     Args:
-        target_file (pathlib.Path or None): Path to target VCF file.
-        source_file (pathlib.Path or None): Path to source VCF file.
+        target_file: Path to target VCF file.
+        source_file: Path to source VCF file.
 
     Raises:
         AssertionError: If inputs are missing/invalid, if count ratio is below
@@ -96,7 +96,7 @@ def check_variant_count_source_comparison(target_file, source_file):
     assert variant_count > source_variant_count * 0.90
 
 
-def check_per_chr_variant_count_source_comparison(target_file: Path, source_file: Path):
+def check_per_chr_variant_count_source_comparison(target_file: Path, source_file: Path | None):
     """
     Compare target VCF variant counts with source VCF variant counts per chromosome.
     Only comparses common chromosomes between target and source.
