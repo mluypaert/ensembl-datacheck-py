@@ -78,15 +78,18 @@ def check_variant_count_source_comparison(target_file: Path, source_file: Path |
 
     The check asserts:
     - source_file is provided
-    - target_count / source_count > min_count_ratio (default 0.95)
+    - at least 90% of the source variant count is found in the target
+    - source variant count does not exceed target variant count
 
     Args:
         target_file: Path to target VCF file.
         source_file: Path to source VCF file (required).
 
     Raises:
-        AssertionError: If inputs are missing/invalid, if count ratio is below
-            threshold.
+        `AssertionError` if:
+          * inputs are missing/invalid
+          * count ratio is below threshold
+          * target count exceeds source count
     """
     assert source_file is not None, "A source file is required (--source-file)."
 
@@ -106,7 +109,9 @@ def check_per_chr_variant_count_source_comparison(target_file: Path, source_file
 
     The check asserts:
     - source_file is provided
-    - target_count / source_count > min_count_ratio (default 0.95)
+    - for each of the common chromosomes between target and source:
+        * at least 95% of the source variant count is found in the target
+        * source variant count does not exceed target variant count
 
     Args:
         target_file: Path to target VCF file.
