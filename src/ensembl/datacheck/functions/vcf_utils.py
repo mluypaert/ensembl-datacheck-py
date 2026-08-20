@@ -88,12 +88,12 @@ def find_vcf_index(vcf_file: Path | str) -> Path | None:
     return Path(index_file)
 
 
-def vcf_reader(target_file: str | Path) -> VCF:
+def vcf_reader(vcf_file_path: str | Path) -> VCF:
     """
     Provide a cyvcf2 VCF reader opened on a VCF file path.
 
     Args:
-        target_file (str or pathlib.Path): The path to the VCF file.
+        vcf_file_path: The path to the VCF file.
 
     Returns:
         cyvcf2.cyvcf2.VCF: Open reader on success.
@@ -101,7 +101,7 @@ def vcf_reader(target_file: str | Path) -> VCF:
     Raises:
         Exception: Propagates import/open failures from cyvcf2.
     """
-    return VCF(str(target_file))
+    return VCF(str(vcf_file_path))
 
 
 def get_vcf_variant_count(file_path: Path | str) -> int | None:

@@ -90,12 +90,13 @@ def check_variant_count_source_comparison(target_file: Path, source_file: Path |
     """
     assert source_file is not None, "A source file is required (--source-file)."
 
-    variant_count: int | None = get_vcf_variant_count(target_file)
+    target_variant_count: int | None = get_vcf_variant_count(target_file)
     source_variant_count: int | None = get_vcf_variant_count(source_file)
 
-    assert variant_count is not None
+    assert target_variant_count is not None
     assert source_variant_count is not None
-    assert variant_count > source_variant_count * 0.90
+    assert (target_variant_count / source_variant_count) > 0.90, "Target file variant count is less than 90% of the source file variant count."
+    assert (target_variant_count / source_variant_count) <= 1, "Target file contains more variants than the source file."
 
 
 def check_per_chr_variant_count_source_comparison(target_file: Path, source_file: Path | None):
