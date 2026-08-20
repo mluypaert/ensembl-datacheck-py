@@ -25,6 +25,7 @@ import pytest
 
 from ensembl.datacheck.checks.vcf import *
 from ensembl.datacheck.functions.vcf_utils import (
+    get_vcf_variant_count_by_chr,
     get_vcf_variant_count,
     vcf_reader
 )
@@ -93,3 +94,45 @@ def check_variant_count_source_comparison(target_file, source_file):
     assert variant_count is not None
     assert source_variant_count is not None
     assert variant_count > source_variant_count * 0.90
+
+
+def check_per_chr_variant_count_source_comparison(target_file: Path, source_file: Path):
+    """
+    Compare target VCF variant counts with source VCF variant counts per chromosome.
+    Only comparses common chromosomes between target and source.
+
+    The check asserts:
+    - source_file is provided
+    - target_count / source_count > min_count_ratio (default 0.95)
+
+    Args:
+        target_file: Path to target VCF file.
+        source_file: Path to source VCF file.
+
+    Raises:
+        `AssertionError` if:
+          * inputs are missing/invalid
+          * Count ratio is below threshold.
+          * Target count exceeds source count for any chr.
+    """
+    target_chrs: list[str]
+    with vcf_reader(target_file) as reader:
+        target_chrs = reader.seqnames
+    source_chrs: list[str]
+    with vcf_reader(source_file) as reader:
+        source_chrs = reader.seqnames
+
+    common_chrs = list(set(target_chrs) & set(source_chrs))
+
+    target_variant_counts = get_vcf_variant_count_by_chr(str(target_file))
+    source_variant_counts = get_vcf_variant_count_by_chr(str(source_file))
+
+    assert target_variant_counts is not None
+    assert source_variant_counts is not None
+
+    for chr in common_chrs:
+        # Note: Not all chr will be present in source VCF (vcf_prepper rename some of them),
+        #       nor in the target vcf (vcf_prepper remove some chr variants).
+        if chr in target_variant_counts and chr in source_variant_counts:
+            assert (target_variant_counts[chr] / source_variant_counts[chr]) > 0.95, f"Target file variant count is less than 95% of the source file variant count for chr {chr}."
+            assert (target_variant_counts[chr] / source_variant_counts[chr]) <= 1, f"Target file contains more variants than the source file for chr {chr}."

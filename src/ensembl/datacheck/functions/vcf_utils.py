@@ -143,6 +143,46 @@ def get_vcf_variant_count(file_path: Path | str) -> int | None:
         ) from exc
 
 
+def get_vcf_variant_count_by_chr(filepath: str) -> dict | None:
+    """Return per-chromosome variant counts for a VCF.
+
+    Attempts to use 'bcftools index --stats'.
+    Falls back to file content iterating if the command fails.
+
+    Args:
+        vcf (str): Path to VCF file.
+
+    Returns:
+        dict|int: Mapping {chrom: count} or None on failure.
+    """
+    if filepath is None:
+        warnings.warn(
+            EnsemblDatacheckWarning(
+                "Could not get variant count - no file provided",
+                'functions/vcf_utils.py',
+                'get_vcf_variant_count_by_chr')
+        )
+        return None
+
+    process = subprocess.run(
+        ["bcftools", "index", "--stats", filepath],
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        check=False,
+    )
+
+    if process.returncode == 0:
+        chrom_variant_counts = {}
+        for chrom_stat in process.stdout.decode().strip().split("\n"):
+            (chrom, _, count) = chrom_stat.split("\t")
+            chrom_variant_counts[chrom] = int(count)
+
+        return chrom_variant_counts
+
+    else:
+        return None
+
+
 def get_max_random_regions(params):
     """
     Get the random-region iteration cap for source-variant sampling.
