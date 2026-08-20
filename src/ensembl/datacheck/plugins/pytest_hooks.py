@@ -154,12 +154,12 @@ def target_file(request) -> pathlib.Path | None:
     Returns:
         pathlib.Path or None: The target file path, or None if not provided.
     """
-    target_file = str(request.config.getoption("target_file"))
+    target_file = request.config.getoption("target_file")
 
     if not target_file:
         return None
 
-    return pathlib.Path(target_file).expanduser()
+    return pathlib.Path(str(target_file)).expanduser()
 
 
 @pytest.fixture
@@ -173,11 +173,11 @@ def source_file(request) -> pathlib.Path | None:
     Returns:
         pathlib.Path or None: The source file path, or None if not provided.
     """
-    source_file = str(request.config.getoption("source_file"))
+    source_file = request.config.getoption("source_file")
     if not source_file:
         return None
 
-    return pathlib.Path(source_file).expanduser()
+    return pathlib.Path(str(source_file)).expanduser()
 
 
 @pytest.fixture(scope="session")
