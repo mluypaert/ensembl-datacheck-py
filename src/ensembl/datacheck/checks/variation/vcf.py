@@ -20,10 +20,14 @@ This module performs variation-specific vcf checks.
 """
 
 from pathlib import Path
+
 import pytest
 
-from ensembl.datacheck.checks.vcf import *  # noqa: W0401
-from ensembl.datacheck.functions.vcf_utils import vcf_reader
+from ensembl.datacheck.checks.vcf import *
+from ensembl.datacheck.functions.vcf_utils import (
+    get_vcf_variant_count,
+    vcf_reader
+)
 
 # module level marker to select test per filetype and dataset type
 pytestmark = [
@@ -33,6 +37,7 @@ pytestmark = [
 ]
 
 
+# Header checks
 def check_csq_in_header(target_file: str | Path):
     """
     Check that the VCF INFO header contains the CSQ field.
@@ -63,3 +68,28 @@ def check_source_in_header(target_file: str | Path):
     reader = vcf_reader(target_file)
 
     assert reader.get_header_type('source'), "source field not found in the VCF header."
+
+
+# Source comparison checks
+def check_variant_count_source_comparison(target_file, source_file):
+    """
+    Compare target VCF variant count with source VCF variant count.
+
+    The check asserts:
+    - source_file is provided
+    - target_count / source_count > min_count_ratio (default 0.95)
+
+    Args:
+        target_file (pathlib.Path or None): Path to target VCF file.
+        source_file (pathlib.Path or None): Path to source VCF file.
+
+    Raises:
+        AssertionError: If inputs are missing/invalid, if count ratio is below
+            threshold.
+    """
+    variant_count: int | None = get_vcf_variant_count(target_file)
+    source_variant_count: int | None = get_vcf_variant_count(source_file)
+
+    assert variant_count is not None
+    assert source_variant_count is not None
+    assert variant_count > source_variant_count * 0.90

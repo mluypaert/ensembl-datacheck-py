@@ -23,9 +23,13 @@ from pathlib import Path
 import random
 import shutil
 import subprocess
+import warnings
 
 from cyvcf2 import VCF
 from pysam import HTSFile
+
+from ensembl.datacheck.functions.file_checks import file_exists
+from ensembl.datacheck.functions.utils import EnsemblDatacheckWarning
 
 
 def is_vcf_file(hts_file: HTSFile) -> bool:
@@ -60,6 +64,30 @@ def is_bgzf_compressed_file(hts_file: HTSFile) -> bool:
     return True
 
 
+def find_vcf_index(vcf_file: Path | str) -> Path | None:
+    """
+    Find the index file for a VCF file.
+
+    Args:
+        vcf_file: Path to the VCF file.
+
+    Returns:
+        Path: Path to the index file if found, None otherwise.
+    """
+    csi_path = str(vcf_file) + '.csi'
+    tbi_path = str(vcf_file) + '.tbi'
+
+    index_file: str | None = None
+    if file_exists(csi_path):
+        index_file = csi_path
+    elif file_exists(tbi_path):
+        index_file = tbi_path
+    else:
+        return None
+
+    return Path(index_file)
+
+
 def vcf_reader(target_file: str | Path) -> VCF:
     """
     Provide a cyvcf2 VCF reader opened on a VCF file path.
@@ -76,12 +104,12 @@ def vcf_reader(target_file: str | Path) -> VCF:
     return VCF(str(target_file))
 
 
-def get_vcf_variant_count(source_file):
+def get_vcf_variant_count(file_path: Path | str) -> int | None:
     """
-    Get total number of VCF records from source_file using bcftools.
+    Get total number of VCF records in a file using bcftools.
 
     Args:
-        source_file (pathlib.Path or str): Path to source VCF file.
+        file_path: Path to a VCF file.
 
     Returns:
         int: Total number of VCF records.
@@ -92,8 +120,11 @@ def get_vcf_variant_count(source_file):
     """
     assert shutil.which("bcftools") is not None, "bcftools is required but not available in PATH."
 
+    index_file = find_vcf_index(file_path)
+
+    # Query the index file rather than the VCF itself to prevent weirdness with index discovery on non-standard filename extensions (like .vcf.bgzf).
     process = subprocess.run(
-        ["bcftools", "index", "--nrecords", str(source_file)],
+        ["bcftools", "index", "--nrecords", str(index_file)],
         stdout=subprocess.PIPE,
         stderr=subprocess.PIPE,
         text=True,
