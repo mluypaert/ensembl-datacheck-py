@@ -42,10 +42,7 @@ def is_vcf_file(hts_file: HTSFile) -> bool:
     Returns:
         bool: True if the file is a VCF file, False otherwise.
     """
-    if not hts_file.is_vcf:
-        return False
-
-    return True
+    return  hts_file.is_vcf
 
 
 def is_bgzf_compressed_file(hts_file: HTSFile) -> bool:
@@ -58,10 +55,7 @@ def is_bgzf_compressed_file(hts_file: HTSFile) -> bool:
     Returns:
         bool: True if the file is a bgzipped file, False otherwise.
     """
-    if hts_file.compression != 'BGZF':
-        return False
-
-    return True
+    return hts_file.compression == 'BGZF'
 
 
 def find_vcf_index(vcf_file: Path | str) -> Path | None:
