@@ -82,12 +82,14 @@ def check_variant_count_source_comparison(target_file: Path, source_file: Path |
 
     Args:
         target_file: Path to target VCF file.
-        source_file: Path to source VCF file.
+        source_file: Path to source VCF file (required).
 
     Raises:
         AssertionError: If inputs are missing/invalid, if count ratio is below
             threshold.
     """
+    assert source_file is not None, "A source file is required (--source-file)."
+
     variant_count: int | None = get_vcf_variant_count(target_file)
     source_variant_count: int | None = get_vcf_variant_count(source_file)
 
@@ -107,7 +109,7 @@ def check_per_chr_variant_count_source_comparison(target_file: Path, source_file
 
     Args:
         target_file: Path to target VCF file.
-        source_file: Path to source VCF file.
+        source_file: Path to source VCF file (required).
 
     Raises:
         `AssertionError` if:
@@ -115,6 +117,8 @@ def check_per_chr_variant_count_source_comparison(target_file: Path, source_file
           * Count ratio is below threshold.
           * Target count exceeds source count for any chr.
     """
+    assert source_file is not None, "A source file is required (--source-file)."
+
     target_chrs: list[str]
     with vcf_reader(target_file) as reader:
         target_chrs = reader.seqnames

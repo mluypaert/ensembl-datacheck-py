@@ -33,6 +33,7 @@ def check_exist(target_file: Path | None, source_file: Path | None):
 
     Args:
         target_file: Path to the target file.
+        source_file: Optional Path to the source file
 
     Raises:
         AssertionError: If the target file is missing.
@@ -48,6 +49,7 @@ def check_is_bgzf_vcf_file(target_file: Path | None, source_file: Path | None):
 
     Args:
         target_file: The path to the file.
+        source_file: Optional Path to the source file
 
     Raises:
         AssertionError: If the file is not identified as a bgzipped vcf file.
@@ -82,6 +84,7 @@ def check_has_valid_index_file(target_file: Path, source_file: Path | None):
 
     Args:
         target_file: The path to the file.
+        source_file: Optional Path to the source file
 
     Raises:
         AssertionError: If the expected index file is not found or not readable
@@ -123,7 +126,8 @@ def check_header(target_file: Path, source_file: Path | None):
     Check that the VCF header has all fields required for bcftools processing.
 
     Args:
-        target_file: The path to the file.
+        target_file: Path to the target file.
+        source_file: Optional Path to the source file
 
     Raises:
         AssertionError: If the file is not identified as a gzipped text file.
