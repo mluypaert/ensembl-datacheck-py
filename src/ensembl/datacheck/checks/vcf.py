@@ -27,7 +27,7 @@ from ensembl.datacheck.functions.file_checks import file_exists
 from ensembl.datacheck.functions.vcf_utils import is_bgzf_compressed_file, is_vcf_file, vcf_reader
 
 
-def check_exist(target_file: Path):
+def check_exist(target_file: Path | None, source_file: Path | None):
     """
     Check that the target file exists on disk.
 
@@ -38,11 +38,13 @@ def check_exist(target_file: Path):
         AssertionError: If the target file is missing.
     """
     assert file_exists(target_file), "The target VCF file does not exist."
+    if source_file is not None:
+        assert file_exists(source_file), "The source VCF file does not exist."
 
 
-def check_is_bgzf_vcf_file(target_file: str | Path):
+def check_is_bgzf_vcf_file(target_file: Path | None, source_file: Path | None):
     """
-    Check that the file is a bgzipped vcf file.
+    Check that the file(s) provided is/are valid bgzipped vcf file(s).
 
     Args:
         target_file: The path to the file.
@@ -50,27 +52,31 @@ def check_is_bgzf_vcf_file(target_file: str | Path):
     Raises:
         AssertionError: If the file is not identified as a bgzipped vcf file.
     """
-    try:
-        file: HTSFile
-        with VariantFile(str(target_file), mode="r") as file:
-            # Assess compression
-            assert (
-                is_bgzf_compressed_file(file)
-            ), f"File is not identified as a bgzipped file: {target_file}"
+    for file_path in [target_file, source_file]:
+        if file_path is None:
+            continue
 
-            # Assess format
-            assert (
-                is_vcf_file(file)
-            ), f"File is not identified as a vcf file: {target_file}"
+        try:
+            file: HTSFile
+            with VariantFile(str(file_path), mode="r") as file:
+                # Assess compression
+                assert (
+                    is_bgzf_compressed_file(file)
+                ), f"File is not identified as a bgzipped file: {file_path}"
 
-    except (OSError, ValueError, NotImplementedError) as ex:
-        raise AssertionError(
-            f"Exception caught during VariantFile assessment of {target_file}:"
-            + f" {ex}."
-        ) from ex
+                # Assess format
+                assert (
+                    is_vcf_file(file)
+                ), f"File is not identified as a vcf file: {file_path}"
+
+        except (OSError, ValueError, NotImplementedError) as ex:
+            raise AssertionError(
+                f"Exception caught during VariantFile assessment of {file_path}:"
+                + f" {ex}."
+            ) from ex
 
 
-def check_has_valid_index_file(target_file: str | Path):
+def check_has_valid_index_file(target_file: str | Path, source_file: str | Path | None):
     """
     Check that an accompanying index file can be found and read appropriately.
 
@@ -82,33 +88,37 @@ def check_has_valid_index_file(target_file: str | Path):
             as a TabixFile index.
     """
 
-    csi_path = str(target_file) + '.csi'
-    tbi_path = str(target_file) + '.tbi'
+    for file_path in [target_file, source_file]:
+        if file_path is None:
+            continue
 
-    index_file: str
-    if file_exists(csi_path):
-        index_file = csi_path
-    elif file_exists(tbi_path):
-        index_file = tbi_path
-    else:
-        raise AssertionError(
-            f"Could not find index file for VCF file {target_file}."
-        )
+        csi_path = str(file_path) + '.csi'
+        tbi_path = str(file_path) + '.tbi'
 
-    try:
-        with TabixFile(filename=str(target_file), index=index_file, mode="r"):
-            pass
-    except (ValueError) as ex:
-        raise AssertionError(
-            f"Missing index file: {index_file}"
-        ) from ex
-    except IOError as ex:
-        raise AssertionError(
-            f"Failed to open index file: {index_file}"
-        ) from ex
+        index_file: str
+        if file_exists(csi_path):
+            index_file = csi_path
+        elif file_exists(tbi_path):
+            index_file = tbi_path
+        else:
+            raise AssertionError(
+                f"Could not find index file for VCF file {file_path}."
+            )
+
+        try:
+            with TabixFile(filename=str(file_path), index=index_file, mode="r"):
+                pass
+        except (ValueError) as ex:
+            raise AssertionError(
+                f"Missing index file: {index_file}"
+            ) from ex
+        except IOError as ex:
+            raise AssertionError(
+                f"Failed to open index file: {index_file}"
+            ) from ex
 
 
-def check_header(target_file: str | Path):
+def check_header(target_file: str | Path, source_file: str | Path | None):
     """
     Check that the VCF header has all fields required for bcftools processing.
 
@@ -119,17 +129,21 @@ def check_header(target_file: str | Path):
         AssertionError: If the file is not identified as a gzipped text file.
     """
 
-    reader = vcf_reader(target_file)
+    for file_path in [target_file, source_file]:
+        if file_path is None:
+            continue
 
-    assert reader.get_header_type('fileformat') is not None, "The fileformat field is missing from the VCF header."
+        reader = vcf_reader(file_path)
 
-    column_header_line = str(reader.raw_header.rstrip('\n').split('\n')[-1])
-    assert column_header_line.startswith('#'), "Column header line does not start with '#'."
+        assert reader.get_header_type('fileformat') is not None, "The fileformat field is missing from the VCF header."
 
-    columns = column_header_line[1:].split('\t')
+        column_header_line = str(reader.raw_header.rstrip('\n').split('\n')[-1])
+        assert column_header_line.startswith('#'), "Column header line does not start with '#'."
 
-    assert columns[0] == 'CHROM', "Column header 'CHROM' not found at expected position."
-    assert columns[1] == 'POS', "Column header 'POS' not found at expected position."
-    assert columns[2] == 'ID', "Column header 'ID' not found at expected position."
-    assert columns[3] == 'REF', "Column header 'REF' not found at expected position."
-    assert columns[4] == 'ALT', "Column header 'ALT' not found at expected position."
+        columns = column_header_line[1:].split('\t')
+
+        assert columns[0] == 'CHROM', "Column header 'CHROM' not found at expected position."
+        assert columns[1] == 'POS', "Column header 'POS' not found at expected position."
+        assert columns[2] == 'ID', "Column header 'ID' not found at expected position."
+        assert columns[3] == 'REF', "Column header 'REF' not found at expected position."
+        assert columns[4] == 'ALT', "Column header 'ALT' not found at expected position."

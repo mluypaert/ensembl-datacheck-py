@@ -18,7 +18,7 @@ import os
 from pathlib import Path
 
 
-def file_exists(target_file):
+def file_exists(target_file: Path | str | None):
     """
     Check if the file exists at the given path.
 
