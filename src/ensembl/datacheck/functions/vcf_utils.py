@@ -213,6 +213,21 @@ def get_max_random_regions(params):
     assert parsed_value > 0, f"Parameter {param_name} must be a positive integer."
     return parsed_value
 
+def parse_CSQ_format(vcf_file: Path | str) -> list[str]:
+    try:
+        with vcf_reader(vcf_file) as reader:
+            csq_info_description = reader.get_header_type("CSQ")["Description"]
+            csq_fields = [
+                csq.strip()
+                for csq in csq_info_description.split("Format: ")[1].split("|")
+            ]
+        return csq_fields
+
+    except Exception as exc:
+        raise AssertionError(
+            f"Failed to parse CSQ format: {exc}"
+        ) from exc
+
 
 def subsample_variants_from_file(vcf_file, params, no_variants=10000) -> dict[str, dict[str, Any]]:
     """
@@ -242,12 +257,9 @@ def subsample_variants_from_file(vcf_file, params, no_variants=10000) -> dict[st
 
     reader = None
     try:
-        reader = vcf_reader(source_file)
-        csq_info_description = reader.get_header_type("CSQ")["Description"]
-        csq_fields = [
-            csq.strip()
-            for csq in csq_info_description.split("Format: ")[1].split("|")
-        ]
+        csq_fields = parse_CSQ_format(vcf_file)
+
+        reader = vcf_reader(vcf_file)
 
         chroms = reader.seqnames
         assert chroms, "Source VCF has no sequence names in the header."

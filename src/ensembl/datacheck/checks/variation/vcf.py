@@ -23,10 +23,12 @@ from pathlib import Path
 
 import pytest
 
+from ensembl.datacheck.checks.variation.types import Expectation_spec
 from ensembl.datacheck.checks.vcf import *
 from ensembl.datacheck.functions.vcf_utils import (
     get_vcf_variant_count_by_chr,
     get_vcf_variant_count,
+    parse_CSQ_format,
     vcf_reader
 )
 
@@ -39,7 +41,7 @@ pytestmark = [
 
 
 # Header checks
-def check_csq_in_header(target_file: Path):
+def check_csq_in_header(subtests: pytest.Subtests, target_file: Path, CSQ_FIELD_EXPECTATIONS: dict[str, Expectation_spec]):
     """
     Check that the VCF INFO header contains the CSQ field.
 
@@ -53,6 +55,13 @@ def check_csq_in_header(target_file: Path):
     reader = vcf_reader(target_file)
 
     assert reader.get_header_type('CSQ'), "CSQ field not found in the VCF (INFO) header."
+
+    # Parse the CSQ format described in the field description
+    csq_fields = parse_CSQ_format(target_file)
+
+    for field,spec in CSQ_FIELD_EXPECTATIONS.items():
+        with subtests.test(f"Evaluating presence of CSQ subfield '{field}'", field=field, spec=spec):
+            assert field in csq_fields, f"CSQ field '{field}' not found in the CSQ fromat string."
 
 
 def check_source_in_header(target_file: Path):
