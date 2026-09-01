@@ -23,6 +23,7 @@ from pathlib import Path
 import random
 import shutil
 import subprocess
+from typing import Any
 import warnings
 
 from cyvcf2 import VCF
@@ -213,7 +214,7 @@ def get_max_random_regions(params):
     return parsed_value
 
 
-def build_variant_list_from_source(source_file, params, no_variants=10000):
+def subsample_variants_from_file(vcf_file, params, no_variants=10000) -> dict[str, dict[str, Any]]:
     """
     Build a sampled variant dictionary from source VCF.
 
@@ -225,7 +226,7 @@ def build_variant_list_from_source(source_file, params, no_variants=10000):
     - for each sampled region, include at most 11 variants
 
     Args:
-        source_file (pathlib.Path or str): Path to source VCF.
+        vcf_file (pathlib.Path or str): Path to VCF file to sample.
         params (dict): Parsed command-line params.
         no_variants (int): Target number of sampled variants. Defaults to 10000.
 

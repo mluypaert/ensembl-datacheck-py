@@ -34,7 +34,7 @@ from ensembl.datacheck.functions.file_checks import file_exists
 from ensembl.datacheck.functions.bb_bw_utils import bb_bw_reader
 from ensembl.datacheck.functions.utils import EnsemblDatacheckWarning
 from ensembl.datacheck.functions.vcf_utils import (
-    build_variant_list_from_source,
+    subsample_variants_from_file,
     get_vcf_variant_count,
 )
 
@@ -157,7 +157,7 @@ def check_variant_exist_from_source(target_file, source_file, variation_params):
     assert source_file is not None, "A source file is required (--source-file)."
     assert file_exists(source_file), "The source file does not exist."
 
-    variant_list = build_variant_list_from_source(source_file, variation_params)
+    variant_list = subsample_variants_from_file(source_file, variation_params)
     if not variant_list:
         warnings.warn(
             EnsemblDatacheckWarning(
