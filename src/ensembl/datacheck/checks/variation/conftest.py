@@ -23,9 +23,13 @@ Fixtures provided:
    user-supplied --params values.
 """
 
+from pathlib import Path
+from typing import Any
+
 import pytest
 
 from ensembl.datacheck.checks.variation.types import Csq_subfield_spec
+from ensembl.datacheck.functions.vcf_utils import subsample_variants_from_file
 
 # Constants
 DEFAULT_MAX_RANDOM_REGIONS = "1000"
@@ -152,3 +156,44 @@ def variation_params(params: dict[str, str]) -> dict[str, str]:
     resolved_params = {"max_random_regions": DEFAULT_MAX_RANDOM_REGIONS}
     resolved_params.update(params)
     return resolved_params
+
+
+@pytest.fixture(scope="session")
+def source_variants_subsample(source_file: Path | None, params: dict[str, str]) -> dict[str, dict[str, Any]]:
+    """
+    Subsample variants from the source file.
+
+    Args:
+        source_file: Path to the source VCF file.
+        params: the CLI input parameters.
+
+    Returns:
+        dict: Subsampled variants.
+
+    Raises:
+        ValueError: If source_file param is not defined.
+    """
+    if source_file is None:
+        raise ValueError("source_file param must be defined for source subsampling.")
+
+    return subsample_variants_from_file(source_file, params)
+
+@pytest.fixture(scope="session")
+def target_variants_subsample(target_file: Path | None, params: dict[str, str]) -> dict[str, dict[str, Any]]:
+    """
+    Subsample variants from the target file.
+
+    Args:
+        target_file: Path to the target VCF file.
+        params: the CLI input parameters.
+
+    Returns:
+        dict: Subsampled variants.
+
+    Raises:
+        ValueError: If target_file param is not defined.
+    """
+    if target_file is None:
+        raise ValueError("target_file param must be defined for taret subsampling.")
+
+    return subsample_variants_from_file(target_file, params)

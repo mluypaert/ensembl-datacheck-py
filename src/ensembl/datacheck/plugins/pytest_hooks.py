@@ -143,7 +143,7 @@ def pytest_runtest_setup(item):
             pytest.skip(f"test requires automation_resource in {automation_resource!r}")
 
 
-@pytest.fixture
+@pytest.fixture(scope="session")
 def target_file(request) -> pathlib.Path | None:
     """
     Pytest fixture to get the target file path from the command-line options.
@@ -162,7 +162,7 @@ def target_file(request) -> pathlib.Path | None:
     return pathlib.Path(str(target_file)).expanduser()
 
 
-@pytest.fixture
+@pytest.fixture(scope="session")
 def source_file(request) -> pathlib.Path | None:
     """
     Pytest fixture to get the source file path from the command-line options.
