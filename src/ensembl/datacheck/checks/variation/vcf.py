@@ -111,7 +111,7 @@ def check_variant_count_source_comparison(target_file: Path, source_file: Path |
     assert (target_variant_count / source_variant_count) <= 1, "Target file contains more variants than the source file."
 
 
-def check_per_chr_variant_count_source_comparison(target_file: Path, source_file: Path | None):
+def check_per_chr_variant_count_source_comparison(subtests: pytest.Subtests, target_file: Path, source_file: Path | None):
     """
     Compare target VCF variant counts with source VCF variant counts per chromosome.
     Only comparses common chromosomes between target and source.
@@ -153,5 +153,7 @@ def check_per_chr_variant_count_source_comparison(target_file: Path, source_file
         # Note: Not all chr will be present in source VCF (vcf_prepper rename some of them),
         #       nor in the target vcf (vcf_prepper remove some chr variants).
         if chr in target_variant_counts and chr in source_variant_counts:
-            assert (target_variant_counts[chr] / source_variant_counts[chr]) > 0.95, f"Target file variant count is less than 95% of the source file variant count for chr {chr}."
-            assert (target_variant_counts[chr] / source_variant_counts[chr]) <= 1, f"Target file contains more variants than the source file for chr {chr}."
+            with subtests.test(f"Comparing variant counts for chr '{chr}'", chr=chr):
+                recovery_ratio = target_variant_counts[chr] / source_variant_counts[chr]
+                assert recovery_ratio > 0.95, f"Target file variant count is only {recovery_ratio * 100}%  (<95%) of the source file variant count for chr {chr}."
+                assert recovery_ratio <= 1, f"Target file contains more variants than the source file for chr {chr}."
