@@ -181,12 +181,12 @@ def source_file(request) -> pathlib.Path | None:
 
 
 @pytest.fixture(scope="session")
-def params(request):
+def params(request: pytest.FixtureRequest) -> dict[str, str]:
     """
     Pytest fixture to get parsed key-value parameters from --params.
 
     Args:
-        request (pytest.FixtureRequest): The fixture request object.
+        request: The fixture request object.
 
     Returns:
         dict: Parsed command-line parameters.
