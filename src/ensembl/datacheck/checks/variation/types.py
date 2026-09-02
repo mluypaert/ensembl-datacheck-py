@@ -43,5 +43,5 @@ class Csq_subfield_spec(TypedDict):
     """
     canbe_empty: NotRequired[ReadOnly[bool]]
     """Whether the subfield is allowed to have no data for (some) records."""
-    species: NotRequired[ReadOnly[str]]
+    species: ReadOnly[str]
     """Species for which the subfield is expected to exist. 'all' if it is expected to exist for all species."""

@@ -26,6 +26,7 @@ import pytest
 from ensembl.datacheck.checks.variation.types import Csq_subfield_spec
 from ensembl.datacheck.checks.vcf import *
 from ensembl.datacheck.functions.vcf_utils import (
+    subsample_variants_from_file,
     get_vcf_variant_count_by_chr,
     get_vcf_variant_count,
     parse_CSQ_format,
@@ -157,3 +158,37 @@ def check_per_chr_variant_count_source_comparison(subtests: pytest.Subtests, tar
                 recovery_ratio = target_variant_counts[chr] / source_variant_counts[chr]
                 assert recovery_ratio > 0.90, f"ADVISORY: Target file variant count is only {recovery_ratio * 100}%  (<90%) of the source file variant count for chr {chr}."
                 assert recovery_ratio <= 1, f"Target file contains more variants than the source file for chr {chr}."
+
+
+# Content checks
+def check_subsample_csq_content(csq_specs_species_filtered: dict[str, Csq_subfield_spec], subtests: pytest.Subtests, target_file: Path, variation_params: dict):
+    """
+    Check that the CSQ field is populated as expected
+    for a random subset of variants from the target file.
+
+    Args:
+        target_file: Path to the target VCF file.
+        csq_specs_species_filtered: Dictionary of CSQ subfield specifications, filtered to fields relevant for the input species only.
+
+    Raises:
+        AssertionError: If the CSQ field is not populated as expected in any of the tested variants.
+    """
+    variant_list = subsample_variants_from_file(target_file, variation_params)
+
+    assert variant_list is not None and len(variant_list) > 0, "Failed to sample variants from target file."
+
+    for field,spec in csq_specs_species_filtered.items():
+        with subtests.test(f"Evaluating CSQ subfield '{field}' content", field=field, spec=spec):
+            canbe_empty = spec.get('canbe_empty', True)
+
+            csq_field_cnt = 0
+            for variant_id in variant_list:
+                first_csq = variant_list[variant_id]['csqs'][0]
+                if first_csq.get(field, "") != "":
+                    csq_field_cnt += 1
+
+            subsample_size = len(variant_list)
+            if not canbe_empty:
+                assert csq_field_cnt == subsample_size, f"Required CSQ field '{field}' is missing in {subsample_size - csq_field_cnt} out of {subsample_size} sampled variants."
+            else:
+                assert csq_field_cnt > 0, f"ADVISORY: Optional CSQ field '{field}' not found in any of the sampled variants."
