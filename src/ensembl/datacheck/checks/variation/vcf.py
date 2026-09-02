@@ -155,5 +155,5 @@ def check_per_chr_variant_count_source_comparison(subtests: pytest.Subtests, tar
         if chr in target_variant_counts and chr in source_variant_counts:
             with subtests.test(f"Comparing variant counts for chr '{chr}'", chr=chr):
                 recovery_ratio = target_variant_counts[chr] / source_variant_counts[chr]
-                assert recovery_ratio > 0.95, f"Target file variant count is only {recovery_ratio * 100}%  (<95%) of the source file variant count for chr {chr}."
+                assert recovery_ratio > 0.95, f"ADVISORY: Target file variant count is only {recovery_ratio * 100}%  (<95%) of the source file variant count for chr {chr}."
                 assert recovery_ratio <= 1, f"Target file contains more variants than the source file for chr {chr}."
