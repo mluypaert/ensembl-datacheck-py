@@ -23,7 +23,7 @@ from pathlib import Path
 
 import pytest
 
-from ensembl.datacheck.checks.variation.types import Expectation_spec
+from ensembl.datacheck.checks.variation.types import Csq_subfield_spec
 from ensembl.datacheck.checks.vcf import *
 from ensembl.datacheck.functions.vcf_utils import (
     get_vcf_variant_count_by_chr,

@@ -35,6 +35,13 @@ from typing import TypedDict
 
 
 # Type definitions
-class Expectation_spec(TypedDict):
+class Csq_subfield_spec(TypedDict):
+    """
+    Dict defining a CSQ subfield specification.
+        * canbe_empty: Whether the subfield is allowed to have no data for (some) records.
+        * species: Species for which the subfield is expected to exist. 'all' if it is expected to exist for all species.
+    """
     canbe_empty: NotRequired[ReadOnly[bool]]
-    field_existance: NotRequired[ReadOnly[str]]
+    """Whether the subfield is allowed to have no data for (some) records."""
+    species: NotRequired[ReadOnly[str]]
+    """Species for which the subfield is expected to exist. 'all' if it is expected to exist for all species."""
