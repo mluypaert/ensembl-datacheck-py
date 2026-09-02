@@ -116,7 +116,35 @@ def CSQ_SPECS() -> dict[str, Csq_subfield_spec]:
 
 
 @pytest.fixture(scope="session")
-def variation_params(params):
+def csq_specs_species_filtered(CSQ_SPECS: dict[str, Csq_subfield_spec], params: dict[str, str]) -> dict[str, Csq_subfield_spec]:
+    """
+    CSQ subfield specs filtered to be relevant for the input species.
+
+    Args:
+        CSQ_SPECS (dict[str, Csq_subfield_spec]): unfiltered CSQ subfield specs.
+        params (dict[str, str]): Parsed command-line parameters.
+
+    Returns:
+        dict[str, Csq_subfield_spec]: Filtered CSQ subfield specs.
+
+    Raises:
+        AssertionError: If species param is not defined.
+    """
+
+    param_species = params.get('species')
+    if param_species is None:
+        raise AssertionError("species param must be defined for CSQ checks.")
+
+    filtered_specs = {}
+    for field, spec in CSQ_SPECS.items():
+        spec_species = spec.get('species', None)
+        if spec_species == 'all' or spec_species == param_species:
+            filtered_specs[field] = spec
+    return filtered_specs
+
+
+@pytest.fixture(scope="session")
+def variation_params(params: dict[str, str]) -> dict[str, str]:
     """
     Variation-specific default parameters for source-file sampling checks.
 

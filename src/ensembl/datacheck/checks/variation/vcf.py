@@ -41,7 +41,7 @@ pytestmark = [
 
 
 # Header checks
-def check_csq_in_header(subtests: pytest.Subtests, target_file: Path, CSQ_FIELD_EXPECTATIONS: dict[str, Expectation_spec]):
+def check_csq_in_header(subtests: pytest.Subtests, target_file: Path, csq_specs_species_filtered: dict[str, Csq_subfield_spec]):
     """
     Check that the VCF INFO header contains the CSQ field.
 
@@ -59,7 +59,7 @@ def check_csq_in_header(subtests: pytest.Subtests, target_file: Path, CSQ_FIELD_
     # Parse the CSQ format described in the field description
     csq_fields = parse_CSQ_format(target_file)
 
-    for field,spec in CSQ_FIELD_EXPECTATIONS.items():
+    for field,spec in csq_specs_species_filtered.items():
         with subtests.test(f"Evaluating presence of CSQ subfield '{field}'", field=field, spec=spec):
             assert field in csq_fields, f"CSQ field '{field}' not found in the CSQ fromat string."
 
