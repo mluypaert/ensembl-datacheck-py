@@ -229,7 +229,7 @@ def parse_CSQ_format(vcf_file: Path | str) -> list[str]:
         ) from exc
 
 
-def subsample_variants_from_file(vcf_file, params, no_variants=10000) -> dict[str, dict[str, Any]]:
+def subsample_variants_from_file(vcf_file: Path | str, params: dict, no_variants:int=10000) -> dict[str, dict[str, Any]]:
     """
     Build a sampled variant dictionary from source VCF.
 
@@ -241,9 +241,9 @@ def subsample_variants_from_file(vcf_file, params, no_variants=10000) -> dict[st
     - for each sampled region, include at most 11 variants
 
     Args:
-        vcf_file (pathlib.Path or str): Path to VCF file to sample.
-        params (dict): Parsed command-line params.
-        no_variants (int): Target number of sampled variants. Defaults to 10000.
+        vcf_file: Path to VCF file to sample.
+        params: Parsed command-line params.
+        no_variants: Target number of sampled variants. Defaults to 10000.
 
     Returns:
         dict: Variant dictionary keyed by variant ID; duplicate IDs overwrite
