@@ -216,9 +216,9 @@ def get_max_random_regions(params):
 def parse_CSQ_format(vcf_file: Path | str) -> list[str]:
     try:
         with vcf_reader(vcf_file) as reader:
-            csq_info_description = reader.get_header_type("CSQ")["Description"]
+            csq_info_description = str(reader.get_header_type("CSQ")["Description"])
             csq_fields = [
-                csq.strip()
+                csq.strip(' "')
                 for csq in csq_info_description.split("Format: ")[1].split("|")
             ]
         return csq_fields
