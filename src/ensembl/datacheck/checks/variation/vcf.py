@@ -189,3 +189,34 @@ def check_subsample_csq_content(csq_specs_species_filtered: dict[str, Csq_subfie
                 assert csq_field_cnt == subsample_size, f"Required CSQ field '{field}' is missing in {subsample_size - csq_field_cnt} out of {subsample_size} sampled variants."
             else:
                 assert csq_field_cnt > 0, f"ADVISORY: Optional CSQ field '{field}' not found in any of the sampled variants."
+
+
+# Summary statistics checks
+def check_summary_stats_per_variant(target_variants_subsample: dict):
+    """
+    Validate per-variant summary fields (NCITE compared to CSQ PUBMED entries).
+
+    Args:
+        target_variants_subsample: A subsample of variants from the target file to check.
+
+    Raises:
+        AssertionError: If NCITE does not match citation count from CSQ PUBMED entries.
+    """
+
+    for variant_id in target_variants_subsample:
+        chrom = target_variants_subsample[variant_id]["chrom"]
+        pos = target_variants_subsample[variant_id]["pos"]
+        citation = set()
+
+        csqs = target_variants_subsample[variant_id]['csqs']
+        for csq in csqs:
+            if "PUBMED" in csq:
+                cites = csq.get("PUBMED", "")
+                for cite in cites.split("&"):
+                    if cite != "":
+                        citation.add(cite)
+
+        if len(citation) > 0:
+            pubmed_count = len(citation)
+            ncite = int(target_variants_subsample[variant_id]['NCITE'])
+            assert pubmed_count == ncite, f"[{chrom}:{pos}:{variant_id}] pubmed_count - {pubmed_count}; ncite - {ncite}"
