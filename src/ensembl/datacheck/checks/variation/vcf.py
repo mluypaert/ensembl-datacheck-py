@@ -65,6 +65,24 @@ def check_csq_in_header(subtests: pytest.Subtests, target_file: Path, csq_specs_
             assert field in csq_fields, f"CSQ field '{field}' not found in the CSQ fromat string."
 
 
+def check_csq_format_matches_value_count(target_file: Path, target_variants_subsample: dict):
+    """
+    Check that the CSQ subfield count as specified in the format description
+    matches the number of values defined in the CSQ field on data records.
+
+    Args:
+        target_file: The path to the file.
+        target_variants_subsample: A subset of the variants in the target file.
+    """
+
+    csq_fields = parse_CSQ_format(target_file)
+
+    for variant_id, variant in target_variants_subsample.items():
+        csqs = variant['csqs']
+        for csq in csqs:
+            assert len(csq) == len(csq_fields), f"Variant '{variant_id}' has {len(csq)} CSQ subfields, but the format description specifies {len(csq_fields)}."
+
+
 def check_source_in_header(target_file: Path):
     """
     Check that the VCF header contains the source field.
