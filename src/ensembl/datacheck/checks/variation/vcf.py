@@ -20,11 +20,13 @@ This module performs variation-specific vcf checks.
 """
 
 from pathlib import Path
+import warnings
 
 import pytest
 
 from ensembl.datacheck.checks.variation.types import Csq_subfield_spec
 from ensembl.datacheck.checks.vcf import *
+from ensembl.datacheck.functions.utils import EnsemblDatacheckWarning
 from ensembl.datacheck.functions.vcf_utils import (
     get_vcf_variant_count_by_chr,
     get_vcf_variant_count,
@@ -160,7 +162,7 @@ def check_per_chr_variant_count_source_comparison(subtests: pytest.Subtests, tar
 
 
 # Content checks
-def check_subsample_csq_content(csq_specs_species_filtered: dict[str, Csq_subfield_spec], subtests: pytest.Subtests, target_variants_subsample: dict):
+def check_subsample_csq_content(csq_specs_species_filtered: dict[str, Csq_subfield_spec], subtests: pytest.Subtests, target_file: Path, target_variants_subsample: dict):
     """
     Check that the CSQ field is populated as expected
     for a random subset of variants from the target file.
@@ -174,8 +176,21 @@ def check_subsample_csq_content(csq_specs_species_filtered: dict[str, Csq_subfie
     """
     assert target_variants_subsample is not None and len(target_variants_subsample) > 0, "Failed to sample variants from target file."
 
+    csq_fields_in_header = parse_CSQ_format(target_file)
+
     for field,spec in csq_specs_species_filtered.items():
         with subtests.test("Evaluating CSQ subfield content", field=field, spec=spec):
+            # Skip this check if the field is not present (failure already covered by check_csq_in_header)
+            if field not in csq_fields_in_header:
+                warnings.warn(
+                    EnsemblDatacheckWarning(
+                        f"CSQ field '{field}' not found in the VCF (INFO) header; Content check skipped.",
+                        "vcf",
+                        "check_subsample_csq_content",
+                    )
+                )
+                continue
+
             canbe_empty = spec.get('canbe_empty', True)
 
             csq_field_cnt = 0
