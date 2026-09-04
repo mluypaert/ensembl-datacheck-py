@@ -60,7 +60,7 @@ def check_csq_in_header(subtests: pytest.Subtests, target_file: Path, csq_specs_
     csq_fields = parse_CSQ_format(target_file)
 
     for field,spec in csq_specs_species_filtered.items():
-        with subtests.test(f"Evaluating presence of CSQ subfield '{field}'", field=field, spec=spec):
+        with subtests.test("Evaluating presence of CSQ subfield", field=field, spec=spec):
             assert field in csq_fields, f"CSQ field '{field}' not found in the CSQ fromat string."
 
 
@@ -175,7 +175,7 @@ def check_subsample_csq_content(csq_specs_species_filtered: dict[str, Csq_subfie
     assert target_variants_subsample is not None and len(target_variants_subsample) > 0, "Failed to sample variants from target file."
 
     for field,spec in csq_specs_species_filtered.items():
-        with subtests.test(f"Evaluating CSQ subfield '{field}' content", field=field, spec=spec):
+        with subtests.test("Evaluating CSQ subfield content", field=field, spec=spec):
             canbe_empty = spec.get('canbe_empty', True)
 
             csq_field_cnt = 0
@@ -188,7 +188,7 @@ def check_subsample_csq_content(csq_specs_species_filtered: dict[str, Csq_subfie
             if not canbe_empty:
                 assert csq_field_cnt == subsample_size, f"Required CSQ field '{field}' is missing in {subsample_size - csq_field_cnt} out of {subsample_size} sampled variants."
             else:
-                assert csq_field_cnt > 0, f"ADVISORY: Optional CSQ field '{field}' not found in any of the sampled variants."
+                assert csq_field_cnt > 0, f"ADVISORY: Optional CSQ field '{field}' not found in any of the sampled variants ({subsample_size}). Consider increasing param max_random_regions."
 
 
 # Summary statistics checks
