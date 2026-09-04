@@ -42,6 +42,24 @@ def check_exist(target_file: Path | None, source_file: Path | None):
     if source_file is not None:
         assert file_exists(source_file), "The source VCF file does not exist."
 
+def check_has_vcf_gz_extension(target_file: Path | None, source_file: Path | None):
+    """
+    Check that the file(s) provided have the .vcf.gz extension.
+
+    Standard extension is important for compatibility with older (<=1.24) versions of bcftools.
+
+    Args:
+        target_file: Path to the target file.
+        source_file: Optional Path to the source file
+
+    Raises:
+        AssertionError: If the file does not have the .vcf.gz extension.
+    """
+    for file_path in [target_file, source_file]:
+        if file_path is None:
+            continue
+
+        assert file_path.suffixes[-2:] == ['.vcf', '.gz'], f"File does not have .vcf.gz extension: {file_path}"
 
 def check_is_bgzf_vcf_file(target_file: Path | None, source_file: Path | None):
     """

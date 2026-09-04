@@ -115,11 +115,9 @@ def get_vcf_variant_count(file_path: Path | str) -> int | None:
     """
     assert shutil.which("bcftools") is not None, "bcftools is required but not available in PATH."
 
-    index_file = find_vcf_index(file_path)
-
     # Query the index file rather than the VCF itself to prevent weirdness with index discovery on non-standard filename extensions (like .vcf.bgzf).
     process = subprocess.run(
-        ["bcftools", "index", "--nrecords", str(index_file)],
+        ["bcftools", "index", "--nrecords", str(file_path)],
         stdout=subprocess.PIPE,
         stderr=subprocess.PIPE,
         text=True,
