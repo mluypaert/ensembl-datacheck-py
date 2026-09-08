@@ -251,7 +251,7 @@ def subsample_variants_from_file(vcf_file: Path | str, params: dict, no_variants
         AssertionError: If source VCF cannot be read or lacks required headers.
     """
     max_random_regions = get_max_random_regions(params)
-    summary_stats_fields = ["NVPHN", "NGPHN", "NTCSQ", "NRCSQ", "NGENE", "NCITE", "RAF"]
+    SUMMARY_STATS_FIELDS = ["NVPHN", "NGPHN", "NTCSQ", "NRCSQ", "NGENE", "NCITE", "RAF"]
 
     reader = None
     try:
@@ -289,7 +289,7 @@ def subsample_variants_from_file(vcf_file: Path | str, params: dict, no_variants
                     }
                     variant_list[variant_id]["csqs"].append(csq_hash)
 
-                for ss_field in summary_stats_fields:
+                for ss_field in SUMMARY_STATS_FIELDS:
                     variant_list[variant_id][ss_field] = variant.INFO.get(ss_field, None)
 
                 total_no_variants += 1
