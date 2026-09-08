@@ -350,13 +350,15 @@ def check_summary_stats_per_allele(target_variants_subsample: dict):
             else:
                 dataset_counts = []
 
-            vcf_summary_stat: int | list[int] | None = target_variants_subsample[variant_id].get(summary_fieldname)
+            vcf_summary_stat: str | int | list[int] | None = target_variants_subsample[variant_id].get(summary_fieldname)
 
             summary_stats: list[int]
             if isinstance(vcf_summary_stat, int):
                 summary_stats = [vcf_summary_stat]
             elif isinstance(vcf_summary_stat, list):
                 summary_stats = vcf_summary_stat
+            elif isinstance(vcf_summary_stat, str):
+                summary_stats = [int(stat) for stat in vcf_summary_stat.split(",")]
             else:
                 summary_stats = []
 
