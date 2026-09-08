@@ -359,7 +359,9 @@ def check_summary_stats_per_allele(target_variants_subsample: dict):
                 summary_stats = vcf_summary_stat
             elif isinstance(vcf_summary_stat, str):
                 summary_stats = [int(stat) for stat in vcf_summary_stat.split(",")]
-            else:
+            elif vcf_summary_stat is None:
                 summary_stats = []
+            else:
+                raise ValueError(f"Unexpected summary stats type: {type(vcf_summary_stat)}. Value: {vcf_summary_stat}")
 
             assert dataset_counts == summary_stats, f"[{chrom}:{pos}:{variant_id} - {summary_fieldname}] dataset_counts - {dataset_counts}; datasets - {field_datasets}; summary_stat - {summary_stats}"
