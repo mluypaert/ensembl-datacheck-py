@@ -252,3 +252,112 @@ def check_summary_stats_per_variant(target_variants_subsample: dict):
             pubmed_count = len(citation)
             ncite = int(target_variants_subsample[variant_id]['NCITE'])
             assert pubmed_count == ncite, f"[{chrom}:{pos}:{variant_id}] pubmed_count - {pubmed_count}; ncite - {ncite}"
+
+
+def check_summary_stats_per_allele(target_variants_subsample: dict):
+    """
+    Validate per-allele summary fields.
+
+    Args:
+        target_variants_subsample: A subsample of variants from the target file to check.
+
+    Raises:
+        AssertionError: If any of the per-allele summary statistics fields do not match the corresponding data-set.
+    """
+
+    PER_ALLELE_SUMMARY_FIELDS: list[str] = [
+        "NTCSQ",
+        "NRCSQ",
+        "NGENE",
+        "NVPHN",
+        "NGPHN"
+    ]
+
+    SKIP_CONSEQUENCE = [
+        "downstream_gene_variant",
+        "upstream_gene_variant",
+        "intergenic_variant",
+        "TF_binding_site_variant",
+        "TFBS_ablation",
+        "TFBS_amplification",
+    ]
+    """Consequence types to skip when aggregating per-allele summary stats."""
+
+    for variant_id in target_variants_subsample:
+        per_allele_summary_data: dict[str, dict[str, set[str]]] = {
+            fieldname: {}
+            for fieldname in PER_ALLELE_SUMMARY_FIELDS
+        }
+        """Mapping of VCF allele-summary stats field names to per-allele sets of corresponding data."""
+
+        # Collect per-allele data sets
+        csqs = target_variants_subsample[variant_id]['csqs']
+        for csq in csqs:
+            allele: str = str(csq["Allele"])
+            consequences: str = str(csq["Consequence"])
+            feature_stable_id: str = str(csq["Feature"])
+
+            for consequence in consequences.split("&"):
+                if consequence in SKIP_CONSEQUENCE:
+                    continue
+
+                if consequence.startswith("regulatory"):
+                    if allele not in per_allele_summary_data['NRCSQ']:
+                        per_allele_summary_data['NRCSQ'][allele] = set()
+                    per_allele_summary_data['NRCSQ'][allele].add(
+                        f"{feature_stable_id}:{consequences}"
+                    )
+                else:
+                    if allele not in per_allele_summary_data['NTCSQ']:
+                        per_allele_summary_data['NTCSQ'][allele] = set()
+                    per_allele_summary_data['NTCSQ'][allele].add(
+                        f"{feature_stable_id}:{consequences}"
+                    )
+
+                gene = csq.get("Gene")
+                if gene:
+                    if allele not in per_allele_summary_data['NGENE']:
+                        per_allele_summary_data['NGENE'][allele] = set()
+                    per_allele_summary_data['NGENE'][allele].add(csq["Gene"])
+
+            phenotypes = csq.get("PHENOTYPES", "")
+            for phenotype in phenotypes.split("&"):
+                pheno_per_allele_fields = phenotype.split("+")
+                if len(pheno_per_allele_fields) != 3:
+                    continue
+
+                (name, source, feature) = pheno_per_allele_fields
+                if feature.startswith("ENS"):
+                    if allele not in per_allele_summary_data['NGPHN']:
+                        per_allele_summary_data['NGPHN'][allele] = set()
+                    per_allele_summary_data['NGPHN'][allele].add(f"{name}:{source}:{feature}")
+                else:
+                    if allele not in per_allele_summary_data['NVPHN']:
+                        per_allele_summary_data['NVPHN'][allele] = set()
+                    per_allele_summary_data['NVPHN'][allele].add(
+                        f"{name}:{source}:{feature}"
+                    )
+
+        chrom = target_variants_subsample[variant_id]["chrom"]
+        pos = target_variants_subsample[variant_id]["pos"]
+
+        # Validate per-allele summary stats
+        for summary_fieldname in PER_ALLELE_SUMMARY_FIELDS:
+            field_datasets = per_allele_summary_data[summary_fieldname]
+
+            if len(field_datasets) >= 1:
+                dataset_counts = sorted([len(dataset) for dataset in field_datasets.values()])
+            else:
+                dataset_counts = []
+
+            vcf_summary_stat: int | list[int] | None = target_variants_subsample[variant_id].get(summary_fieldname)
+
+            summary_stats: list[int]
+            if isinstance(vcf_summary_stat, int):
+                summary_stats = [vcf_summary_stat]
+            elif isinstance(vcf_summary_stat, list):
+                summary_stats = vcf_summary_stat
+            else:
+                summary_stats = []
+
+            assert dataset_counts == summary_stats, f"[{chrom}:{pos}:{variant_id} - {summary_fieldname}] dataset_counts - {dataset_counts}; datasets - {field_datasets}; summary_stat - {summary_stats}"
