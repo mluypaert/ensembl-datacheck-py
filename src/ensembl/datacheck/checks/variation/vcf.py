@@ -345,22 +345,25 @@ def check_summary_stats_per_allele(target_variants_subsample: dict):
         for summary_fieldname in PER_ALLELE_SUMMARY_FIELDS:
             field_datasets = per_allele_summary_data[summary_fieldname]
 
+            dataset_counts: tuple[int, ...]
             if len(field_datasets) >= 1:
-                dataset_counts = sorted([len(dataset) for dataset in field_datasets.values()])
+                dataset_counts = tuple(sorted([len(dataset) for dataset in field_datasets.values()]))
             else:
-                dataset_counts = []
+                dataset_counts = ()
 
             vcf_summary_stat: str | int | list[int] | None = target_variants_subsample[variant_id].get(summary_fieldname)
 
-            summary_stats: list[int]
-            if isinstance(vcf_summary_stat, int):
-                summary_stats = [vcf_summary_stat]
-            elif isinstance(vcf_summary_stat, list):
+            summary_stats: tuple[int, ...]
+            if isinstance(vcf_summary_stat, tuple):
                 summary_stats = vcf_summary_stat
+            elif isinstance(vcf_summary_stat, int):
+                summary_stats = (vcf_summary_stat,)
+            elif isinstance(vcf_summary_stat, list):
+                summary_stats = tuple(vcf_summary_stat)
             elif isinstance(vcf_summary_stat, str):
-                summary_stats = [int(stat) for stat in vcf_summary_stat.split(",")]
+                summary_stats = tuple([int(stat) for stat in vcf_summary_stat.split(",")])
             elif vcf_summary_stat is None:
-                summary_stats = []
+                summary_stats = ()
             else:
                 raise ValueError(f"Unexpected summary stats type: {type(vcf_summary_stat)}. Value: {vcf_summary_stat}")
 
