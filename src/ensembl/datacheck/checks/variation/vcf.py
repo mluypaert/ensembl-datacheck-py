@@ -305,13 +305,13 @@ def check_summary_stats_per_allele(target_variants_subsample: dict):
                     if allele not in per_allele_summary_data['NRCSQ']:
                         per_allele_summary_data['NRCSQ'][allele] = set()
                     per_allele_summary_data['NRCSQ'][allele].add(
-                        f"{feature_stable_id}:{consequences}"
+                        f"{feature_stable_id}:{consequences}"  # Intentionally using consequences because represented as single row in entity viewer
                     )
                 else:
                     if allele not in per_allele_summary_data['NTCSQ']:
                         per_allele_summary_data['NTCSQ'][allele] = set()
                     per_allele_summary_data['NTCSQ'][allele].add(
-                        f"{feature_stable_id}:{consequences}"
+                        f"{feature_stable_id}:{consequences}"  # Intentionally using consequences because represented as single row in entity viewer
                     )
 
                 gene = csq.get("Gene")
