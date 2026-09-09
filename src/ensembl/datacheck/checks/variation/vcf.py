@@ -352,7 +352,7 @@ def check_summary_stats_per_allele(target_variants_subsample: dict):
             else:
                 dataset_counts = ()
 
-            vcf_summary_stat: str | int | list[int] | None = target_variants_subsample[variant_id].get(summary_fieldname)
+            vcf_summary_stat: tuple | str | int | list[int] | None = target_variants_subsample[variant_id].get(summary_fieldname)
 
             summary_stats: tuple[int, ...]
             if isinstance(vcf_summary_stat, tuple):
