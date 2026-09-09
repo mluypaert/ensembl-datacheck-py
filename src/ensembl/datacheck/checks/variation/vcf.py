@@ -293,7 +293,7 @@ def check_summary_stats_per_allele(target_variants_subsample: dict):
         # Collect per-allele data sets
         csqs = target_variants_subsample[variant_id]['csqs']
         for csq in csqs:
-            allele: str = str(csq["Allele"])
+            allele_key: str = f"{csq['ALLELE_NUM']}-{csq['Allele']}"
             consequences: str = str(csq["Consequence"])
             feature_stable_id: str = str(csq["Feature"])
 
@@ -302,23 +302,23 @@ def check_summary_stats_per_allele(target_variants_subsample: dict):
                     continue
 
                 if consequence.startswith("regulatory"):
-                    if allele not in per_allele_summary_data['NRCSQ']:
-                        per_allele_summary_data['NRCSQ'][allele] = set()
-                    per_allele_summary_data['NRCSQ'][allele].add(
+                    if allele_key not in per_allele_summary_data['NRCSQ']:
+                        per_allele_summary_data['NRCSQ'][allele_key] = set()
+                    per_allele_summary_data['NRCSQ'][allele_key].add(
                         f"{feature_stable_id}:{consequences}"  # Intentionally using consequences because represented as single row in entity viewer
                     )
                 else:
-                    if allele not in per_allele_summary_data['NTCSQ']:
-                        per_allele_summary_data['NTCSQ'][allele] = set()
-                    per_allele_summary_data['NTCSQ'][allele].add(
+                    if allele_key not in per_allele_summary_data['NTCSQ']:
+                        per_allele_summary_data['NTCSQ'][allele_key] = set()
+                    per_allele_summary_data['NTCSQ'][allele_key].add(
                         f"{feature_stable_id}:{consequences}"  # Intentionally using consequences because represented as single row in entity viewer
                     )
 
                 gene = csq.get("Gene")
                 if gene:
-                    if allele not in per_allele_summary_data['NGENE']:
-                        per_allele_summary_data['NGENE'][allele] = set()
-                    per_allele_summary_data['NGENE'][allele].add(csq["Gene"])
+                    if allele_key not in per_allele_summary_data['NGENE']:
+                        per_allele_summary_data['NGENE'][allele_key] = set()
+                    per_allele_summary_data['NGENE'][allele_key].add(csq["Gene"])
 
             phenotypes = csq.get("PHENOTYPES", "")
             for phenotype in phenotypes.split("&"):
@@ -328,13 +328,13 @@ def check_summary_stats_per_allele(target_variants_subsample: dict):
 
                 (name, source, feature) = pheno_per_allele_fields
                 if feature.startswith("ENS"):
-                    if allele not in per_allele_summary_data['NGPHN']:
-                        per_allele_summary_data['NGPHN'][allele] = set()
-                    per_allele_summary_data['NGPHN'][allele].add(f"{name}:{source}:{feature}")
+                    if allele_key not in per_allele_summary_data['NGPHN']:
+                        per_allele_summary_data['NGPHN'][allele_key] = set()
+                    per_allele_summary_data['NGPHN'][allele_key].add(f"{name}:{source}:{feature}")
                 else:
-                    if allele not in per_allele_summary_data['NVPHN']:
-                        per_allele_summary_data['NVPHN'][allele] = set()
-                    per_allele_summary_data['NVPHN'][allele].add(
+                    if allele_key not in per_allele_summary_data['NVPHN']:
+                        per_allele_summary_data['NVPHN'][allele_key] = set()
+                    per_allele_summary_data['NVPHN'][allele_key].add(
                         f"{name}:{source}:{feature}"
                     )
 
@@ -347,7 +347,8 @@ def check_summary_stats_per_allele(target_variants_subsample: dict):
 
             dataset_counts: tuple[int, ...]
             if len(field_datasets) >= 1:
-                dataset_counts = tuple(sorted([len(dataset) for dataset in field_datasets.values()]))
+                # Sort by field_datasets keys (=ALLELE_NUM from CSQ), in order to match summary field allele order.
+                dataset_counts = tuple([len(v) for (_, v) in sorted(field_datasets.items(), key=lambda item: item[0])])
             else:
                 dataset_counts = ()
 
