@@ -19,6 +19,7 @@ variation/vcf.py
 This module performs variation-specific vcf checks.
 """
 
+from math import isclose
 from pathlib import Path
 import warnings
 
@@ -369,3 +370,66 @@ def check_summary_stats_per_allele(target_variants_subsample: dict):
                 raise ValueError(f"Unexpected summary stats type: {type(vcf_summary_stat)}. Value: {vcf_summary_stat}")
 
             assert dataset_counts == summary_stats, f"[{chrom}:{pos}:{variant_id} - {summary_fieldname}] dataset_counts - {dataset_counts}; datasets - {field_datasets}; summary_stat - {summary_stats}"
+
+
+def check_summary_stats_frequency(target_variants_subsample: dict, params: dict[str, str]):
+        """Validate representative allele frequency (RAF) matches frequencies from CSQ fields.
+        This test is only applicable to human species (GRCh38 and GRCh37).
+
+        Args:
+            target_variants_subsample (dict): Subsampled variants.
+            params (dict[str, str]): Parsed command-line parameters.
+
+        Raises:
+            ValueError: If species param is not defined.
+            AssertionError: If RAF does not match frequencies from CSQ fields.
+        """
+
+        species = params.get('species')
+        if species is None:
+            raise ValueError("species param must be defined for summary stats frequency check.")
+
+        if species != "homo_sapiens":
+            pytest.skip(f"Check not relevant for species {species}, skipping ...")
+
+        for variant_id in target_variants_subsample:
+            chrom = target_variants_subsample[variant_id]["chrom"]
+            pos = target_variants_subsample[variant_id]["pos"]
+            frequency: dict[str, float] = {}
+
+            csqs = target_variants_subsample[variant_id]['csqs']
+            skip_variant = False
+            for csq in csqs:
+                allele_key = f"{csq['ALLELE_NUM']}-{csq['Allele']}"
+                freq = csq["gnomAD_genomes_AF"]
+
+                if freq != "":
+                    # skip variants with multiple frequencies (separated by &, currently not supported)
+                    if "&" in freq:
+                        skip_variant = True
+                        break
+
+                    frequency[allele_key] = float(freq)
+
+            if skip_variant:
+                continue
+
+            a_t = 1.0
+            r_t = 1e-5
+
+            if len(frequency) >= 1:
+                csq_freqs = tuple(v for (_, v) in sorted(frequency.items(), key=lambda item: item[0]))
+                raf_stats: tuple[float, ...]
+                if type(target_variants_subsample[variant_id]["RAF"]) is tuple:
+                    raf_stats = tuple([val for val in target_variants_subsample[variant_id]["RAF"] if val is not None])
+                else:
+                    if target_variants_subsample[variant_id]['RAF'] is not None:
+                        raf_stats = (target_variants_subsample[variant_id]['RAF'],)
+                    else:
+                        raf_stats = ()
+
+                assert len(csq_freqs) == len(raf_stats), f"[{chrom}:{pos}:{variant_id}] number of CSQ allele frequencies does not match summary statistics'; csq_freqs - {csq_freqs}; raf_stats - {raf_stats}"
+                for idx, _ in enumerate(csq_freqs):
+                    assert isclose(csq_freqs[idx], raf_stats[idx], rel_tol=r_t, abs_tol=a_t), f"[{chrom}:{pos}:{variant_id}] csq_freqs - {csq_freqs[idx]}; raf_stats - {raf_stats[idx]}"
+            else:
+                assert target_variants_subsample[variant_id]["RAF"] is None, f"[{chrom}:{pos}:{variant_id}] csq_freqs - no frequency data found; raf_stats - {target_variants_subsample[variant_id]['RAF']}"
