@@ -127,12 +127,12 @@ def csq_specs_species_filtered(CSQ_SPECS: dict[str, Csq_subfield_spec], params: 
         dict[str, Csq_subfield_spec]: Filtered CSQ subfield specs.
 
     Raises:
-        AssertionError: If species param is not defined.
+        ValueError: If species param is not defined.
     """
 
     param_species = params.get('species')
     if param_species is None:
-        raise AssertionError("species param must be defined for CSQ checks.")
+        raise ValueError("species param must be defined for CSQ checks.")
 
     filtered_specs = {}
     for field, spec in CSQ_SPECS.items():
